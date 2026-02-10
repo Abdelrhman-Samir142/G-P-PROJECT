@@ -19,6 +19,32 @@ export const dictionaries = {
             aiAnalysis: 'الذكاء الاصطناعي',
             aiAnalysisDesc: 'تحليل الأسعار لحظياً',
         },
+        categories: {
+            title: 'تصفح حسب الفئة',
+            subtitle: 'كل اللي تحتاجه في مكان واحد',
+            electronics: 'إلكترونيات',
+            furniture: 'أثاث',
+            scrap: 'خردة ومعادن',
+            fashion: 'ملابس',
+            vehicles: 'مركبات',
+            books: 'كتب',
+        },
+        features: {
+            title: 'ليه تختار RefurbAI؟',
+            subtitle: 'مميزات ذكية بتغير طريقة البيع والشراء',
+            aiPricing: {
+                title: 'تسعير ذكي',
+                desc: 'خوارزميات ذكية بتقترح عليك أفضل سعر لمنتجك بناءً على حالة السوق.',
+            },
+            smartSearch: {
+                title: 'بحث متطور',
+                desc: 'دور بالصورة أو الوصف، وهنوصلك باللي بتدور عليه في ثواني.',
+            },
+            secure: {
+                title: 'آمن وموثوق',
+                desc: 'نظام تقييم ومراجعة عشان تضمن حقك في كل عملية بيع وشراء.',
+            },
+        },
         stats: {
             activeUsers: 'مستخدم نشط',
             productsSold: 'منتج مباع',
@@ -86,6 +112,32 @@ export const dictionaries = {
             addListing: 'Add Listing',
             aiAnalysis: 'Artificial Intelligence',
             aiAnalysisDesc: 'Real-time Price Analysis',
+        },
+        categories: {
+            title: 'Browse by Category',
+            subtitle: 'Everything you need in one place',
+            electronics: 'Electronics',
+            furniture: 'Furniture',
+            scrap: 'Scrap & Metals',
+            fashion: 'Fashion',
+            vehicles: 'Vehicles',
+            books: 'Books',
+        },
+        features: {
+            title: 'Why Choose RefurbAI?',
+            subtitle: 'Smart features changing the way you buy and sell',
+            aiPricing: {
+                title: 'Smart Pricing',
+                desc: 'Intelligent algorithms suggest the best price for your item based on market trends.',
+            },
+            smartSearch: {
+                title: 'Advanced Search',
+                desc: 'Search by image or description, and we will connect you with what you need in seconds.',
+            },
+            secure: {
+                title: 'Secure & Trusted',
+                desc: 'Rating and review system to ensure your rights in every transaction.',
+            },
         },
         stats: {
             activeUsers: 'Active Users',

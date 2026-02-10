@@ -77,13 +77,13 @@ export function Navbar() {
                             {dict.nav.home}
                         </Link>
                         <Link
-                            href="/dashboard"
+                            href={isLoggedIn ? "/dashboard" : "/login"}
                             className="text-sm font-semibold hover:text-primary transition-colors"
                         >
                             {dict.nav.shop}
                         </Link>
                         <Link
-                            href="/dashboard"
+                            href={isLoggedIn ? "/dashboard" : "/login"}
                             className="text-sm font-semibold hover:text-primary transition-colors"
                         >
                             {dict.nav.auctions}
@@ -110,6 +110,8 @@ export function Navbar() {
                             {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
                         </button>
 
+
+
                         {/* Auth Buttons / User Menu */}
                         {!loading && (
                             <>
@@ -120,8 +122,8 @@ export function Navbar() {
                                                 {dict.nav.login}
                                             </button>
                                         </Link>
-                                        <Link href="/login">
-                                            <button className="bg-primary hover:bg-primary-700 text-white px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-sm hover:shadow-md">
+                                        <Link href="/register">
+                                            <button className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-sm hover:shadow-md">
                                                 {dict.nav.register}
                                             </button>
                                         </Link>

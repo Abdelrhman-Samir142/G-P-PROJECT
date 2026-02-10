@@ -23,8 +23,12 @@ export default function LoginPage() {
 
         try {
             await authAPI.login(username, password);
-            // Successful login - redirect to dashboard
-            router.push('/dashboard');
+            // Successful login - redirect to homepage or dashboard
+            // Check if there's a redirect query param
+            const urlParams = new URLSearchParams(window.location.search);
+            const redirectUrl = urlParams.get('redirect') || '/';
+            router.push(redirectUrl);
+            router.refresh();
         } catch (err: any) {
             console.error('Login error:', err);
             setError(err.message || 'فشل تسجيل الدخول. تحقق من بيانات الاعتماد الخاصة بك.');
@@ -65,13 +69,13 @@ export default function LoginPage() {
                         {/* Username */}
                         <div>
                             <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
-                                {dict.login.email || 'اسم المستخدم'}
+                                اسم المستخدم أو البريد الإلكتروني
                             </label>
                             <input
                                 type="text"
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
-                                placeholder="username"
+                                placeholder="username or email"
                                 className="w-full border border-slate-200 dark:border-slate-700 rounded-xl p-3 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 bg-white dark:bg-slate-900 transition-all"
                                 required
                                 disabled={loading}

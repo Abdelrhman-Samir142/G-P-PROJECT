@@ -10,6 +10,8 @@ from django.db import models
 from django_filters.rest_framework import DjangoFilterBackend
 from decimal import Decimal
 import random
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from .models import Product, ProductImage, Auction, Bid, UserProfile, AIPriceAnalysis
 from .serializers import (
@@ -18,6 +20,26 @@ from .serializers import (
     RegisterSerializer, AIPriceAnalysisSerializer
 )
 
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs):
+        # Determine if the input is email or username
+        login_input = attrs.get('username')
+        password = attrs.get('password')
+
+        if login_input and password:
+            # Check if input is email
+            if '@' in login_input:
+                try:
+                    user = User.objects.get(email=login_input)
+                    attrs['username'] = user.username
+                except User.DoesNotExist:
+                    # If email doesn't exist, let it fail naturally or handle error
+                    pass
+        
+        return super().validate(attrs)
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -239,3 +261,31 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         profile = get_object_or_404(UserProfile, user=request.user)
         serializer = self.get_serializer(profile)
         return Response(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_general_stats(request):
+    """
+    Get general statistics for the landing page
+    """
+    total_users = User.objects.count()
+    products_sold = Product.objects.filter(status='sold').count()
+    scrap_count = Product.objects.filter(category='scrap').count()
+    
+    # Calculate active governorates/cities from profiles and products
+    user_locations = UserProfile.objects.values_list('city', flat=True).distinct()
+    product_locations = Product.objects.values_list('location', flat=True).distinct()
+    
+    # Combine and convert to set to get unique locations (case insensitive roughly)
+    locations = set([loc.lower().strip() for loc in user_locations if loc])
+    locations.update([loc.lower().strip() for loc in product_locations if loc])
+    
+    active_governorates = len(locations)
+    
+    return Response({
+        'total_users': total_users,
+        'products_sold': products_sold,
+        'scrap_count': scrap_count,
+        'active_governorates': active_governorates
+    })

@@ -1,17 +1,58 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useLanguage } from '@/components/providers/language-provider';
 import { Users, Package, Leaf, MapPin } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { generalAPI } from '@/lib/api';
 
 export function Stats() {
     const { dict } = useLanguage();
+    const [statsData, setStatsData] = useState({
+        total_users: 0,
+        products_sold: 0,
+        scrap_count: 0,
+        active_governorates: 0
+    });
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const data = await generalAPI.getGeneralStats();
+                setStatsData(data);
+            } catch (error) {
+                console.error('Failed to fetch stats:', error);
+            }
+        };
+
+        fetchStats();
+    }, []);
 
     const stats = [
-        { icon: Users, label: dict.stats.activeUsers, value: '+١٠,٠٠٠', color: 'text-blue-600' },
-        { icon: Package, label: dict.stats.productsSold, value: '+٥,٠٠٠', color: 'text-emerald-600' },
-        { icon: Leaf, label: dict.stats.scrapTons, value: '٨٠٠', color: 'text-green-600' },
-        { icon: MapPin, label: dict.stats.governorates, value: '٢٧', color: 'text-orange-600' },
+        {
+            icon: Users,
+            label: dict.stats.activeUsers,
+            value: statsData.total_users || '0',
+            color: 'text-blue-600'
+        },
+        {
+            icon: Package,
+            label: dict.stats.productsSold,
+            value: statsData.products_sold || '0',
+            color: 'text-emerald-600'
+        },
+        {
+            icon: Leaf,
+            label: dict.stats.scrapTons,
+            value: statsData.scrap_count || '0',
+            color: 'text-green-600'
+        },
+        {
+            icon: MapPin,
+            label: dict.stats.governorates,
+            value: statsData.active_governorates || '0',
+            color: 'text-orange-600'
+        },
     ];
 
     return (

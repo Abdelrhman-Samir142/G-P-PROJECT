@@ -122,7 +122,7 @@ export default function RegisterPage() {
                         {/* Username */}
                         <div>
                             <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
-                                {dict.login?.email || 'اسم المستخدم'}
+                                اسم المستخدم
                             </label>
                             <input
                                 type="text"

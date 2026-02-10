@@ -129,7 +129,7 @@ try {
 ### List Auctions
 ```typescript
 try {
-    const auctions = await auctionsAPI.list(true); // true for active only
+    const auctions = await auctionsAPI.list(true); 
     console.log('Active auctions:', auctions);
 } catch (error) {
     console.error('Error fetching auctions:', error);

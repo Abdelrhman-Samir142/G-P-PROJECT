@@ -1,16 +1,20 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/layout/navbar';
 import { Footer } from '@/components/layout/footer';
 import { ProductCard } from '@/components/ui/product-card';
 import { SidebarFilters } from '@/components/ui/sidebar-filters';
 import { useLanguage } from '@/components/providers/language-provider';
+import { useAuth } from '@/components/providers/auth-provider';
 import { Search, Loader2 } from 'lucide-react';
 import { productsAPI } from '@/lib/api';
 
 export default function DashboardPage() {
     const { dict } = useLanguage();
+    const { user, loading: authLoading } = useAuth();
+    const router = useRouter();
     const [searchQuery, setSearchQuery] = useState('');
     const [products, setProducts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -48,12 +52,28 @@ export default function DashboardPage() {
     }, [searchQuery, filters.category, filters.min_price, filters.max_price, filters.condition, filters.auctions_only]);
 
     useEffect(() => {
-        fetchProducts();
-    }, [fetchProducts]);
+        if (!authLoading && !user) {
+            router.push('/login?redirect=/dashboard');
+        } else if (user) {
+            fetchProducts();
+        }
+    }, [authLoading, user, router, fetchProducts]);
+
+    const handleFilterChange = useCallback((newFilters: any) => {
+        setFilters(prev => ({ ...prev, ...newFilters }));
+    }, []);
 
     const handleSearch = () => {
         fetchProducts();
     };
+
+    if (authLoading || !user) {
+        return (
+            <div className="flex min-h-screen items-center justify-center">
+                <Loader2 className="animate-spin text-primary" size={40} />
+            </div>
+        );
+    }
 
     return (
         <>
@@ -84,9 +104,7 @@ export default function DashboardPage() {
                     <div className="grid lg:grid-cols-4 gap-6">
                         <div className="lg:col-span-1">
                             <SidebarFilters
-                                onFilterChange={useCallback((newFilters: any) => {
-                                    setFilters(prev => ({ ...prev, ...newFilters }));
-                                }, [])}
+                                onFilterChange={handleFilterChange}
                             />
                         </div>
 

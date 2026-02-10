@@ -2,11 +2,13 @@
 
 import Link from 'next/link';
 import { useLanguage } from '@/components/providers/language-provider';
+import { useAuth } from '@/components/providers/auth-provider';
 import { Sparkles, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export function Hero() {
     const { dict, isRtl } = useLanguage();
+    const { user } = useAuth();
 
     return (
         <section className="pt-24 pb-12 px-4 sm:px-6 lg:px-8">
@@ -18,16 +20,6 @@ export function Hero() {
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.6 }}
                     >
-                        {/* Badge */}
-                        <motion.span
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.2 }}
-                            className="inline-block bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 px-4 py-2 rounded-full text-xs font-bold mb-6"
-                        >
-                            {dict.hero.badge}
-                        </motion.span>
-
                         {/* Heading */}
                         <motion.h1
                             initial={{ opacity: 0, y: 20 }}
@@ -59,7 +51,7 @@ export function Hero() {
                             transition={{ delay: 0.5 }}
                             className="flex flex-col sm:flex-row gap-4"
                         >
-                            <Link href="/dashboard">
+                            <Link href={user ? "/dashboard" : "/login?redirect=/dashboard"}>
                                 <button className="w-full sm:w-auto bg-primary hover:bg-primary-700 text-white px-8 py-4 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 group">
                                     {dict.hero.browseProducts}
                                     <ArrowRight
@@ -69,7 +61,7 @@ export function Hero() {
                                 </button>
                             </Link>
 
-                            <Link href="/sell">
+                            <Link href={user ? "/sell" : "/login?redirect=/sell"}>
                                 <button className="w-full sm:w-auto border-2 border-slate-300 dark:border-slate-700 hover:border-primary dark:hover:border-primary px-8 py-4 rounded-xl font-bold transition-all hover:bg-primary-50 dark:hover:bg-primary-900/20">
                                     {dict.hero.addListing}
                                 </button>
@@ -94,61 +86,6 @@ export function Hero() {
                             {/* Gradient Overlay */}
                             <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
                         </div>
-
-                        {/* AI Badge Float Card */}
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.8, y: 20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            transition={{ delay: 0.7, type: 'spring' }}
-                            className={`absolute -bottom-6 ${isRtl ? '-left-6' : '-right-6'} bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 max-w-xs`}
-                        >
-                            <div className="flex items-center gap-3">
-                                <motion.div
-                                    animate={{
-                                        rotate: [0, 10, -10, 0],
-                                        scale: [1, 1.1, 1],
-                                    }}
-                                    transition={{
-                                        duration: 2,
-                                        repeat: Infinity,
-                                        ease: 'easeInOut',
-                                    }}
-                                    className="bg-primary p-3 rounded-xl text-white flex-shrink-0"
-                                >
-                                    <Sparkles size={24} />
-                                </motion.div>
-
-                                <div>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase mb-1">
-                                        {dict.hero.aiAnalysis}
-                                    </p>
-                                    <p className="text-sm font-bold text-slate-900 dark:text-white">
-                                        {dict.hero.aiAnalysisDesc}
-                                    </p>
-                                </div>
-                            </div>
-
-                            {/* Animated progress indicator */}
-                            <div className="mt-3 flex gap-1">
-                                {[0, 1, 2, 3, 4].map((i) => (
-                                    <motion.div
-                                        key={i}
-                                        className="flex-1 h-1 bg-primary-200 dark:bg-primary-900/30 rounded-full overflow-hidden"
-                                    >
-                                        <motion.div
-                                            className="h-full bg-primary rounded-full"
-                                            initial={{ width: '0%' }}
-                                            animate={{ width: '100%' }}
-                                            transition={{
-                                                duration: 0.8,
-                                                delay: 0.9 + i * 0.1,
-                                                ease: 'easeOut',
-                                            }}
-                                        />
-                                    </motion.div>
-                                ))}
-                            </div>
-                        </motion.div>
                     </motion.div>
                 </div>
             </div>

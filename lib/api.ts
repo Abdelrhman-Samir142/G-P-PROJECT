@@ -53,7 +53,7 @@ async function apiFetch<T>(
             clearAuthTokens();
 
             // Only redirect if NOT on login page and NOT checking auth status silently
-            if (!endpoint.includes('login') && !endpoint.includes('/auth/me/')) {
+            if (!endpoint.includes('login') && !endpoint.includes('/auth/me/') && !endpoint.includes('/profiles/me/')) {
                 if (typeof window !== 'undefined') {
                     window.location.href = '/login';
                 }
@@ -259,5 +259,17 @@ export const profilesAPI = {
             method: 'PATCH',
             body: JSON.stringify(data),
         });
+    },
+};
+
+// General API
+export const generalAPI = {
+    async getGeneralStats() {
+        return apiFetch<{
+            total_users: number;
+            products_sold: number;
+            scrap_count: number;
+            active_governorates: number;
+        }>('/general-stats/');
     },
 };
