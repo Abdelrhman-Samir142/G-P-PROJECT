@@ -1,0 +1,146 @@
+'use client';
+
+import { useState, useEffect, useCallback } from 'react';
+import { Navbar } from '@/components/layout/navbar';
+import { Footer } from '@/components/layout/footer';
+import { ProductCard } from '@/components/ui/product-card';
+import { SidebarFilters } from '@/components/ui/sidebar-filters';
+import { useLanguage } from '@/components/providers/language-provider';
+import { Search, Loader2 } from 'lucide-react';
+import { productsAPI } from '@/lib/api';
+
+export default function DashboardPage() {
+    const { dict } = useLanguage();
+    const [searchQuery, setSearchQuery] = useState('');
+    const [products, setProducts] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [filters, setFilters] = useState({
+        category: '',
+        min_price: undefined as number | undefined,
+        max_price: undefined as number | undefined,
+        condition: '',
+        auctions_only: false,
+    });
+
+    const fetchProducts = useCallback(async () => {
+        try {
+            setLoading(true);
+            setError(null);
+
+            const params: any = {};
+
+            if (searchQuery) params.search = searchQuery;
+            if (filters.category) params.category = filters.category;
+            if (filters.min_price) params.min_price = filters.min_price;
+            if (filters.max_price) params.max_price = filters.max_price;
+            if (filters.condition) params.condition = filters.condition;
+            if (filters.auctions_only) params.auctions_only = true;
+
+            const response = await productsAPI.list(params);
+            setProducts(response.results || []);
+        } catch (err: any) {
+            console.error('Error fetching products:', err);
+            setError(err.message || 'Failed to load products');
+        } finally {
+            setLoading(false);
+        }
+    }, [searchQuery, filters.category, filters.min_price, filters.max_price, filters.condition, filters.auctions_only]);
+
+    useEffect(() => {
+        fetchProducts();
+    }, [fetchProducts]);
+
+    const handleSearch = () => {
+        fetchProducts();
+    };
+
+    return (
+        <>
+            <Navbar />
+            <main className="pt-24 pb-12 min-h-screen px-4 sm:px-6 lg:px-8">
+                <div className="max-w-7xl mx-auto">
+                    <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-8">
+                        <h2 className="text-2xl md:text-3xl font-bold">{dict.dashboard.title}</h2>
+
+                        <div className="flex gap-2 max-w-md w-full">
+                            <input
+                                type="text"
+                                placeholder={dict.dashboard.searchPlaceholder}
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                                className="flex-1 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 bg-white dark:bg-slate-800 transition-all"
+                            />
+                            <button
+                                onClick={handleSearch}
+                                className="bg-primary hover:bg-primary-700 text-white p-3 rounded-xl transition-colors shadow-sm hover:shadow-md"
+                            >
+                                <Search size={20} />
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="grid lg:grid-cols-4 gap-6">
+                        <div className="lg:col-span-1">
+                            <SidebarFilters
+                                onFilterChange={useCallback((newFilters: any) => {
+                                    setFilters(prev => ({ ...prev, ...newFilters }));
+                                }, [])}
+                            />
+                        </div>
+
+                        <div className="lg:col-span-3">
+                            {loading && (
+                                <div className="flex items-center justify-center py-20">
+                                    <Loader2 className="animate-spin text-primary" size={40} />
+                                </div>
+                            )}
+
+                            {error && !loading && (
+                                <div className="text-center py-20">
+                                    <p className="text-red-500 text-lg mb-4">{error}</p>
+                                    <button
+                                        onClick={fetchProducts}
+                                        className="bg-primary hover:bg-primary-700 text-white px-6 py-3 rounded-xl font-bold transition-all"
+                                    >
+                                        إعادة المحاولة
+                                    </button>
+                                </div>
+                            )}
+
+                            {!loading && !error && (
+                                <>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                                        {products.map((product) => (
+                                            <ProductCard
+                                                key={product.id}
+                                                product={{
+                                                    id: product.id.toString(),
+                                                    title: product.title,
+                                                    price: parseFloat(product.price),
+                                                    image: product.primary_image || product.images?.[0]?.image || product.image || '/placeholder.png',
+                                                    isAuction: product.is_auction || false,
+                                                    category: product.category,
+                                                    description: product.description,
+                                                    endTime: product.auction?.end_time,
+                                                }}
+                                            />
+                                        ))}
+                                    </div>
+
+                                    {products.length === 0 && (
+                                        <div className="text-center py-20">
+                                            <p className="text-slate-400 text-lg">لا توجد منتجات</p>
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </main>
+            <Footer />
+        </>
+    );
+}
