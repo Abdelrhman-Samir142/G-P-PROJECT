@@ -2,7 +2,7 @@
 
 import { useLanguage } from '@/components/providers/language-provider';
 import { motion } from 'framer-motion';
-import { Laptop, Sofa, Recycle } from 'lucide-react';
+import { Laptop, Sofa, Recycle, Car, Building2, Package } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/providers/auth-provider';
@@ -14,25 +14,46 @@ export function Categories() {
 
     const categories = [
         {
+            id: 'scrap_metals',
+            name: 'خردة ومعادن',
+            icon: Recycle,
+            color: 'text-green-500',
+            bg: 'bg-green-50 dark:bg-green-900/20',
+        },
+        {
             id: 'electronics',
-            name: dict.categories.electronics,
+            name: 'إلكترونيات وأجهزة',
             icon: Laptop,
             color: 'text-blue-500',
             bg: 'bg-blue-50 dark:bg-blue-900/20',
         },
         {
             id: 'furniture',
-            name: dict.categories.furniture,
+            name: 'أثاث وديكور',
             icon: Sofa,
             color: 'text-amber-500',
             bg: 'bg-amber-50 dark:bg-amber-900/20',
         },
         {
-            id: 'scrap',
-            name: dict.categories.scrap,
-            icon: Recycle,
-            color: 'text-green-500',
-            bg: 'bg-green-50 dark:bg-green-900/20',
+            id: 'cars',
+            name: 'سيارات للبيع',
+            icon: Car,
+            color: 'text-red-500',
+            bg: 'bg-red-50 dark:bg-red-900/20',
+        },
+        {
+            id: 'real_estate',
+            name: 'عقارات',
+            icon: Building2,
+            color: 'text-purple-500',
+            bg: 'bg-purple-50 dark:bg-purple-900/20',
+        },
+        {
+            id: 'other',
+            name: 'أخرى',
+            icon: Package,
+            color: 'text-slate-500',
+            bg: 'bg-slate-50 dark:bg-slate-900/20',
         },
     ];
 

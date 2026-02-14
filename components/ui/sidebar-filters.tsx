@@ -5,10 +5,12 @@ import { Filter, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const categories = [
-    { id: 'electronics', label: 'إلكترونيات', count: 245 },
-    { id: 'furniture', label: 'أثاث', count: 182 },
-    { id: 'scrap', label: 'خردة', count: 523 },
-    { id: 'other', label: 'أخرى', count: 89 },
+    { id: 'scrap_metals', label: 'خردة ومعادن' },
+    { id: 'electronics', label: 'إلكترونيات وأجهزة' },
+    { id: 'furniture', label: 'أثاث وديكور' },
+    { id: 'cars', label: 'سيارات للبيع' },
+    { id: 'real_estate', label: 'عقارات' },
+    { id: 'other', label: 'أخرى' },
 ];
 
 const priceRanges = [
@@ -31,7 +33,6 @@ interface SidebarFiltersProps {
         min_price?: number;
         max_price?: number;
         condition?: string;
-        auctions_only?: boolean;
     }) => void;
 }
 
@@ -40,7 +41,6 @@ export function SidebarFilters({ onFilterChange }: SidebarFiltersProps) {
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
     const [selectedPriceRange, setSelectedPriceRange] = useState<string | null>(null);
     const [selectedConditions, setSelectedConditions] = useState<string[]>([]);
-    const [showAuctionsOnly, setShowAuctionsOnly] = useState(false);
 
     // Notify parent of filter changes
     useEffect(() => {
@@ -52,30 +52,28 @@ export function SidebarFilters({ onFilterChange }: SidebarFiltersProps) {
                 min_price?: number;
                 max_price?: number;
                 condition?: string;
-                auctions_only?: boolean;
             } = {};
 
-            if (selectedCategories.length > 0) filters.category = selectedCategories[0]; // Take first category
+            if (selectedCategories.length > 0) filters.category = selectedCategories[0];
             if (priceRange) {
                 filters.min_price = priceRange.min;
                 if (priceRange.max !== Infinity) filters.max_price = priceRange.max;
             }
-            if (selectedConditions.length > 0) filters.condition = selectedConditions[0]; // Take first condition
-            if (showAuctionsOnly) filters.auctions_only = true;
+            if (selectedConditions.length > 0) filters.condition = selectedConditions[0];
 
             onFilterChange(filters);
         }
-    }, [selectedCategories, selectedPriceRange, selectedConditions, showAuctionsOnly, onFilterChange]);
+    }, [selectedCategories, selectedPriceRange, selectedConditions, onFilterChange]);
 
     const toggleCategory = (id: string) => {
         setSelectedCategories((prev) =>
-            prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]
+            prev.includes(id) ? prev.filter((c) => c !== id) : [id]
         );
     };
 
     const toggleCondition = (id: string) => {
         setSelectedConditions((prev) =>
-            prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]
+            prev.includes(id) ? prev.filter((c) => c !== id) : [id]
         );
     };
 
@@ -83,8 +81,9 @@ export function SidebarFilters({ onFilterChange }: SidebarFiltersProps) {
         setSelectedCategories([]);
         setSelectedPriceRange(null);
         setSelectedConditions([]);
-        setShowAuctionsOnly(false);
     };
+
+    const hasActiveFilters = selectedCategories.length > 0 || selectedPriceRange !== null || selectedConditions.length > 0;
 
     const FilterContent = () => (
         <div className="space-y-6">
@@ -94,26 +93,14 @@ export function SidebarFilters({ onFilterChange }: SidebarFiltersProps) {
                     <Filter size={20} className="text-primary" />
                     <h3 className="font-bold text-lg">تصفية النتائج</h3>
                 </div>
-                <button
-                    onClick={clearFilters}
-                    className="text-xs text-slate-500 hover:text-primary transition-colors font-semibold"
-                >
-                    مسح الكل
-                </button>
-            </div>
-
-            {/* Auctions Only Toggle */}
-            <div className="flex items-center gap-3 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
-                <input
-                    type="checkbox"
-                    id="auctions-only"
-                    checked={showAuctionsOnly}
-                    onChange={(e) => setShowAuctionsOnly(e.target.checked)}
-                    className="w-4 h-4 text-primary rounded focus:ring-primary"
-                />
-                <label htmlFor="auctions-only" className="text-sm font-semibold cursor-pointer">
-                    المزادات النشطة فقط
-                </label>
+                {hasActiveFilters && (
+                    <button
+                        onClick={clearFilters}
+                        className="text-xs text-red-500 hover:text-red-600 transition-colors font-bold bg-red-50 dark:bg-red-900/20 px-3 py-1 rounded-full"
+                    >
+                        مسح الكل ✕
+                    </button>
+                )}
             </div>
 
             {/* Categories */}
@@ -123,7 +110,10 @@ export function SidebarFilters({ onFilterChange }: SidebarFiltersProps) {
                     {categories.map((category) => (
                         <label
                             key={category.id}
-                            className="flex items-center justify-between p-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg cursor-pointer group"
+                            className={`flex items-center justify-between p-2 rounded-lg cursor-pointer group transition-colors ${selectedCategories.includes(category.id)
+                                ? 'bg-primary/10 border border-primary/30'
+                                : 'hover:bg-slate-50 dark:hover:bg-slate-800'
+                                }`}
                         >
                             <div className="flex items-center gap-2">
                                 <input
@@ -132,11 +122,11 @@ export function SidebarFilters({ onFilterChange }: SidebarFiltersProps) {
                                     onChange={() => toggleCategory(category.id)}
                                     className="w-4 h-4 text-primary rounded focus:ring-primary"
                                 />
-                                <span className="text-sm font-medium group-hover:text-primary transition-colors">
+                                <span className={`text-sm font-medium transition-colors ${selectedCategories.includes(category.id) ? 'text-primary font-bold' : 'group-hover:text-primary'
+                                    }`}>
                                     {category.label}
                                 </span>
                             </div>
-                            <span className="text-xs text-slate-400 font-semibold">{category.count}</span>
                         </label>
                     ))}
                 </div>
@@ -149,16 +139,24 @@ export function SidebarFilters({ onFilterChange }: SidebarFiltersProps) {
                     {priceRanges.map((range) => (
                         <label
                             key={range.id}
-                            className="flex items-center gap-2 p-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg cursor-pointer group"
+                            className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer group transition-colors ${selectedPriceRange === range.id
+                                    ? 'bg-primary/10 border border-primary/30'
+                                    : 'hover:bg-slate-50 dark:hover:bg-slate-800'
+                                }`}
+                            onClick={(e) => {
+                                e.preventDefault();
+                                setSelectedPriceRange(prev => prev === range.id ? null : range.id);
+                            }}
                         >
                             <input
                                 type="radio"
                                 name="price-range"
                                 checked={selectedPriceRange === range.id}
-                                onChange={() => setSelectedPriceRange(range.id)}
+                                readOnly
                                 className="w-4 h-4 text-primary focus:ring-primary"
                             />
-                            <span className="text-sm font-medium group-hover:text-primary transition-colors">
+                            <span className={`text-sm font-medium transition-colors ${selectedPriceRange === range.id ? 'text-primary font-bold' : 'group-hover:text-primary'
+                                }`}>
                                 {range.label}
                             </span>
                         </label>

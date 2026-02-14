@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/layout/navbar';
 import { Footer } from '@/components/layout/footer';
 import { useLanguage } from '@/components/providers/language-provider';
+import { useAuth } from '@/components/providers/auth-provider';
 import { Camera, Sparkles, Upload, X, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { productsAPI, authAPI } from '@/lib/api';
+import { productsAPI } from '@/lib/api';
 
 export default function SellPage() {
     const router = useRouter();
@@ -19,7 +20,7 @@ export default function SellPage() {
     const [formData, setFormData] = useState({
         title: '',
         price: '',
-        category: 'electronics',
+        category: '',
         condition: 'good',
         description: '',
         location: '',
@@ -28,21 +29,15 @@ export default function SellPage() {
         auction_start_time: '',
         auction_end_time: '',
     });
+    const { user, loading: authLoading } = useAuth();
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [checkingAuth, setCheckingAuth] = useState(true);
 
-    useEffect(() => {
-        const verifyAuth = async () => {
-            try {
-                await authAPI.getCurrentUser();
-                setCheckingAuth(false);
-            } catch (err) {
-                router.push('/login');
-            }
-        };
-        verifyAuth();
-    }, [router]);
+    // Redirect if not authenticated
+    if (!authLoading && !user) {
+        router.push('/login?redirect=/sell');
+        return null;
+    }
 
     const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault();
@@ -151,49 +146,22 @@ export default function SellPage() {
                 formDataToSend.append('uploaded_images', file);
             });
 
-            const token = document.cookie
-                .split('; ')
-                .find(row => row.startsWith('access_token='))
-                ?.split('=')[1];
+            await productsAPI.create(formDataToSend);
 
-            const response = await fetch('http://localhost:8000/api/products/', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
-                body: formDataToSend,
-            });
-
-            if (response.status >= 200 && response.status < 300) {
-                // Redirect based on product type
-                if (formData.is_auction) {
-                    router.push('/auctions');
-                } else {
-                    router.push('/dashboard');
-                }
-                return;
+            // Redirect based on product type
+            if (formData.is_auction) {
+                router.push('/auctions');
+            } else {
+                router.push('/dashboard');
             }
-
-            const errorText = await response.text();
-            let errorMessage = 'Failed to create product';
-
-            try {
-                const errorJson = JSON.parse(errorText);
-                errorMessage = errorJson.detail || errorJson.message || 'Failed to create product';
-            } catch (parseError) {
-                errorMessage = errorText || 'Failed to create product';
-            }
-
-            setError(errorMessage);
-            setSubmitting(false);
         } catch (err: any) {
             console.error('Error creating product:', err);
-            setError('حدث خطأ في الاتصال بالخادم');
+            setError(err.message || 'حدث خطأ في نشر الإعلان');
             setSubmitting(false);
         }
     };
 
-    if (checkingAuth) {
+    if (authLoading) {
         return (
             <>
                 <Navbar />
@@ -323,9 +291,13 @@ export default function SellPage() {
                                                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                                                     className="w-full border border-slate-200 dark:border-slate-700 rounded-xl p-3 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 bg-white dark:bg-slate-900"
                                                 >
-                                                    <option value="electronics">{dict.addItem.electronics}</option>
-                                                    <option value="furniture">{dict.addItem.furniture}</option>
-                                                    <option value="scrap">{dict.addItem.scrap}</option>
+                                                    <option value="">اختر التصنيف</option>
+                                                    <option value="scrap_metals">خردة ومعادن</option>
+                                                    <option value="electronics">إلكترونيات وأجهزة</option>
+                                                    <option value="furniture">أثاث وديكور</option>
+                                                    <option value="cars">سيارات للبيع</option>
+                                                    <option value="real_estate">عقارات</option>
+                                                    <option value="other">أخرى</option>
                                                 </select>
                                             </div>
                                         </div>

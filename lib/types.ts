@@ -4,7 +4,7 @@ export interface Product {
     price: number;
     image: string;
     isAuction: boolean;
-    category: 'electronics' | 'furniture' | 'scrap' | 'other';
+    category: 'scrap_metals' | 'electronics' | 'furniture' | 'cars' | 'real_estate' | 'other';
     description?: string;
     condition?: string;
     location?: string;

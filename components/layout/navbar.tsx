@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { authAPI, profilesAPI } from '@/lib/api';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 
 export function Navbar() {
     const { theme, setTheme } = useTheme();
@@ -18,6 +18,7 @@ export function Navbar() {
     const [user, setUser] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const router = useRouter();
+    const pathname = usePathname();
 
     // Fetch current user and profile
     useEffect(() => {
@@ -72,19 +73,22 @@ export function Navbar() {
                     <div className="hidden md:flex items-center gap-6">
                         <Link
                             href="/"
-                            className="text-sm font-semibold hover:text-primary transition-colors"
+                            className={`text-sm font-semibold transition-colors relative pb-1 ${pathname === '/' ? 'text-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:rounded-full' : 'hover:text-primary'
+                                }`}
                         >
                             {dict.nav.home}
                         </Link>
                         <Link
                             href={isLoggedIn ? "/dashboard" : "/login"}
-                            className="text-sm font-semibold hover:text-primary transition-colors"
+                            className={`text-sm font-semibold transition-colors relative pb-1 ${pathname === '/dashboard' ? 'text-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:rounded-full' : 'hover:text-primary'
+                                }`}
                         >
                             {dict.nav.shop}
                         </Link>
                         <Link
-                            href={isLoggedIn ? "/dashboard" : "/login"}
-                            className="text-sm font-semibold hover:text-primary transition-colors"
+                            href={isLoggedIn ? "/auctions" : "/login"}
+                            className={`text-sm font-semibold transition-colors relative pb-1 ${pathname === '/auctions' ? 'text-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:rounded-full' : 'hover:text-primary'
+                                }`}
                         >
                             {dict.nav.auctions}
                         </Link>
@@ -180,21 +184,24 @@ export function Navbar() {
                             <div className="flex flex-col gap-3">
                                 <Link
                                     href="/"
-                                    className="px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg font-semibold"
+                                    className={`px-4 py-2 rounded-lg font-semibold ${pathname === '/' ? 'bg-primary/10 text-primary border-r-4 border-primary' : 'hover:bg-slate-100 dark:hover:bg-slate-800'
+                                        }`}
                                     onClick={() => setMobileMenuOpen(false)}
                                 >
                                     {dict.nav.home}
                                 </Link>
                                 <Link
                                     href="/dashboard"
-                                    className="px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg font-semibold"
+                                    className={`px-4 py-2 rounded-lg font-semibold ${pathname === '/dashboard' ? 'bg-primary/10 text-primary border-r-4 border-primary' : 'hover:bg-slate-100 dark:hover:bg-slate-800'
+                                        }`}
                                     onClick={() => setMobileMenuOpen(false)}
                                 >
                                     {dict.nav.shop}
                                 </Link>
                                 <Link
-                                    href="/dashboard"
-                                    className="px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg font-semibold"
+                                    href="/auctions"
+                                    className={`px-4 py-2 rounded-lg font-semibold ${pathname === '/auctions' ? 'bg-primary/10 text-primary border-r-4 border-primary' : 'hover:bg-slate-100 dark:hover:bg-slate-800'
+                                        }`}
                                     onClick={() => setMobileMenuOpen(false)}
                                 >
                                     {dict.nav.auctions}

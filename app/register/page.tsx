@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useLanguage } from '@/components/providers/language-provider';
+import { useAuth } from '@/components/providers/auth-provider';
 import { Leaf, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { authAPI } from '@/lib/api';
@@ -11,6 +12,7 @@ import { authAPI } from '@/lib/api';
 export default function RegisterPage() {
     const router = useRouter();
     const { dict } = useLanguage();
+    const { refreshUser } = useAuth();
 
     // Form state
     const [formData, setFormData] = useState({
@@ -49,6 +51,8 @@ export default function RegisterPage() {
         try {
             await authAPI.register(formData);
             // Successful registration - authAPI.register automatically sets tokens
+            // Refresh the auth context so the user state is populated
+            await refreshUser();
             // Redirect to dashboard
             router.push('/dashboard');
         } catch (err: any) {

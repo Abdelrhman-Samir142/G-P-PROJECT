@@ -2,9 +2,18 @@
 
 import Link from 'next/link';
 import { Product } from '@/lib/types';
-import { Plus, Clock } from 'lucide-react';
+import { Clock, MapPin } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '@/components/providers/language-provider';
+
+const categoryLabels: Record<string, { label: string; color: string; bg: string }> = {
+    scrap_metals: { label: 'خردة ومعادن', color: 'text-emerald-700 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-800' },
+    electronics: { label: 'إلكترونيات وأجهزة', color: 'text-blue-700 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800' },
+    furniture: { label: 'أثاث وديكور', color: 'text-amber-700 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/30 border-amber-200 dark:border-amber-800' },
+    cars: { label: 'سيارات للبيع', color: 'text-red-700 dark:text-red-400', bg: 'bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800' },
+    real_estate: { label: 'عقارات', color: 'text-purple-700 dark:text-purple-400', bg: 'bg-purple-50 dark:bg-purple-900/30 border-purple-200 dark:border-purple-800' },
+    other: { label: 'أخرى', color: 'text-slate-700 dark:text-slate-400', bg: 'bg-slate-50 dark:bg-slate-900/30 border-slate-200 dark:border-slate-800' },
+};
 
 interface ProductCardProps {
     product: Product;
@@ -12,59 +21,67 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
     const { dict } = useLanguage();
+    const catInfo = categoryLabels[product.category] || categoryLabels.other;
 
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            whileHover={{ y: -5 }}
-            transition={{ duration: 0.3 }}
-            className="group bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden hover:shadow-xl transition-all"
+            whileHover={{ y: -4 }}
+            transition={{ duration: 0.25 }}
+            className="group bg-white dark:bg-slate-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 border border-slate-100 dark:border-slate-700/60"
         >
             <Link href={`/product/${product.id}`}>
-                {/* Image Container */}
-                <div className="relative h-48 overflow-hidden bg-slate-100 dark:bg-slate-700">
+                {/* Image */}
+                <div className="relative h-52 overflow-hidden bg-slate-100 dark:bg-slate-700">
                     <img
                         src={product.image}
                         alt={product.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        className="w-full h-full object-cover group-hover:scale-[1.06] transition-transform duration-500 ease-out"
                     />
 
-                    {/* Auction Badge */}
-                    {product.isAuction && (
-                        <div className="absolute top-3 right-3 bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs px-3 py-1 rounded-full font-bold shadow-lg flex items-center gap-1">
-                            <Clock size={12} />
-                            {dict.dashboard.activeAuction}
-                        </div>
-                    )}
+                    {/* Top badges row */}
+                    <div className="absolute top-3 right-3 flex flex-col gap-2 items-end">
+                        {/* Auction Badge */}
+                        {product.isAuction && (
+                            <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white text-[11px] px-2.5 py-1 rounded-full font-bold shadow-md flex items-center gap-1">
+                                <Clock size={11} />
+                                {dict.dashboard.activeAuction}
+                            </div>
+                        )}
+                    </div>
 
-                    {/* Glassmorphism Overlay on Hover */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    {/* Category badge - bottom left of image */}
+                    <div className="absolute bottom-3 right-3">
+                        <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full border backdrop-blur-sm ${catInfo.bg} ${catInfo.color}`}>
+                            {catInfo.label}
+                        </span>
+                    </div>
+
+                    {/* Subtle gradient overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 </div>
 
                 {/* Content */}
                 <div className="p-4">
-                    <h3 className="font-bold text-sm mb-2 line-clamp-2 group-hover:text-primary transition-colors">
+                    <h3 className="font-bold text-[15px] mb-3 line-clamp-2 leading-relaxed group-hover:text-primary transition-colors duration-200">
                         {product.title}
                     </h3>
 
-                    <div className="flex justify-between items-center">
-                        <div>
-                            <span className="text-primary font-black text-lg">
-                                {product.price.toLocaleString()}
-                            </span>
-                            <span className="text-slate-500 text-xs mr-1">{dict.currency}</span>
+                    <div className="flex justify-between items-end">
+                        <div className="flex flex-col">
+                            <span className="text-[11px] text-slate-400 font-medium mb-0.5">السعر</span>
+                            <div className="flex items-baseline gap-1">
+                                <span className="text-primary font-black text-xl leading-none">
+                                    {product.price.toLocaleString()}
+                                </span>
+                                <span className="text-slate-400 text-xs font-semibold">{dict.currency}</span>
+                            </div>
                         </div>
 
-                        <button
-                            className="bg-slate-100 dark:bg-slate-700 p-2 rounded-lg hover:bg-primary hover:text-white transition-all group/btn"
-                            onClick={(e) => {
-                                e.preventDefault();
-                                // Add to cart logic
-                            }}
-                        >
-                            <Plus size={16} className="group-hover/btn:rotate-90 transition-transform" />
-                        </button>
+                        <div className="bg-primary/10 text-primary text-xs font-bold px-3 py-1.5 rounded-lg group-hover:bg-primary group-hover:text-white transition-all duration-200">
+                            عرض التفاصيل
+                        </div>
                     </div>
                 </div>
             </Link>

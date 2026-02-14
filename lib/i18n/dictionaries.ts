@@ -52,7 +52,7 @@ export const dictionaries = {
             governorates: 'محافظة',
         },
         dashboard: {
-            title: 'أحدث المنتجات والمزادات',
+            title: 'أحدث المنتجات',
             searchPlaceholder: 'ابحث هنا...',
             activeAuction: 'مزاد نشط',
         },
@@ -146,7 +146,7 @@ export const dictionaries = {
             governorates: 'Governorates',
         },
         dashboard: {
-            title: 'Latest Products and Auctions',
+            title: 'Latest Products',
             searchPlaceholder: 'Search here...',
             activeAuction: 'Active Auction',
         },

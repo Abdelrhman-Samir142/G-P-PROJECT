@@ -24,7 +24,6 @@ export default function DashboardPage() {
         min_price: undefined as number | undefined,
         max_price: undefined as number | undefined,
         condition: '',
-        auctions_only: false,
     });
 
     const fetchProducts = useCallback(async () => {
@@ -39,7 +38,6 @@ export default function DashboardPage() {
             if (filters.min_price) params.min_price = filters.min_price;
             if (filters.max_price) params.max_price = filters.max_price;
             if (filters.condition) params.condition = filters.condition;
-            if (filters.auctions_only) params.auctions_only = true;
 
             const response = await productsAPI.list(params);
             setProducts(response.results || []);
@@ -49,7 +47,7 @@ export default function DashboardPage() {
         } finally {
             setLoading(false);
         }
-    }, [searchQuery, filters.category, filters.min_price, filters.max_price, filters.condition, filters.auctions_only]);
+    }, [searchQuery, filters.category, filters.min_price, filters.max_price, filters.condition]);
 
     useEffect(() => {
         if (!authLoading && !user) {
@@ -60,7 +58,12 @@ export default function DashboardPage() {
     }, [authLoading, user, router, fetchProducts]);
 
     const handleFilterChange = useCallback((newFilters: any) => {
-        setFilters(prev => ({ ...prev, ...newFilters }));
+        setFilters({
+            category: newFilters.category || '',
+            min_price: newFilters.min_price,
+            max_price: newFilters.max_price,
+            condition: newFilters.condition || '',
+        });
     }, []);
 
     const handleSearch = () => {
@@ -129,27 +132,29 @@ export default function DashboardPage() {
 
                             {!loading && !error && (
                                 <>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-                                        {products.map((product) => (
-                                            <ProductCard
-                                                key={product.id}
-                                                product={{
-                                                    id: product.id.toString(),
-                                                    title: product.title,
-                                                    price: parseFloat(product.price),
-                                                    image: product.primary_image || product.images?.[0]?.image || product.image || '/placeholder.png',
-                                                    isAuction: product.is_auction || false,
-                                                    category: product.category,
-                                                    description: product.description,
-                                                    endTime: product.auction?.end_time,
-                                                }}
-                                            />
-                                        ))}
-                                    </div>
-
-                                    {products.length === 0 && (
-                                        <div className="text-center py-20">
-                                            <p className="text-slate-400 text-lg">لا توجد منتجات</p>
+                                    {products.length === 0 ? (
+                                        <div className="text-center py-24">
+                                            <div className="text-6xl mb-4">📦</div>
+                                            <p className="text-slate-500 dark:text-slate-400 text-lg font-medium">لا توجد منتجات حالياً</p>
+                                            <p className="text-slate-400 dark:text-slate-500 text-sm mt-2">جرب تغيير الفلاتر أو ابحث بكلمات مختلفة</p>
+                                        </div>
+                                    ) : (
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                                            {products.map((product) => (
+                                                <ProductCard
+                                                    key={product.id}
+                                                    product={{
+                                                        id: product.id.toString(),
+                                                        title: product.title,
+                                                        price: parseFloat(product.price),
+                                                        image: product.primary_image || product.images?.[0]?.image || product.image || '/placeholder.png',
+                                                        isAuction: product.is_auction || false,
+                                                        category: product.category,
+                                                        description: product.description,
+                                                        endTime: product.auction?.end_time,
+                                                    }}
+                                                />
+                                            ))}
                                         </div>
                                     )}
                                 </>

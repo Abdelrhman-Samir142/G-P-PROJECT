@@ -5,12 +5,27 @@ import Link from 'next/link';
 import { Navbar } from '@/components/layout/navbar';
 import { Footer } from '@/components/layout/footer';
 import { AuctionTimer } from '@/components/ui/auction-timer';
-import { AIPricing } from '@/components/ui/ai-pricing';
 import { useLanguage } from '@/components/providers/language-provider';
 import { ArrowRight, ShoppingCart, MapPin, Star, Loader2, Edit, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { productsAPI, auctionsAPI, authAPI } from '@/lib/api';
+
+const categoryLabels: Record<string, string> = {
+    scrap_metals: 'خردة ومعادن',
+    electronics: 'إلكترونيات وأجهزة',
+    furniture: 'أثاث وديكور',
+    cars: 'سيارات للبيع',
+    real_estate: 'عقارات',
+    other: 'أخرى',
+};
+
+const conditionLabels: Record<string, string> = {
+    'new': 'جديد',
+    'like-new': 'كالجديد',
+    'good': 'جيد',
+    'fair': 'مقبول',
+};
 
 export default function ProductPage() {
     const params = useParams();
@@ -189,7 +204,7 @@ export default function ProductPage() {
                             {/* Title & Category */}
                             <div>
                                 <span className="inline-block bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 px-3 py-1 rounded-lg text-xs font-bold mb-3">
-                                    {product.category}
+                                    {categoryLabels[product.category] || product.category}
                                 </span>
                                 <div className="flex justify-between items-start gap-4">
                                     <h1 className="text-3xl md:text-4xl font-black mb-3">{product.title}</h1>
@@ -214,11 +229,11 @@ export default function ProductPage() {
                             <div className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
                                 <div className="flex-1">
                                     <p className="text-xs text-slate-500 dark:text-slate-400 font-bold mb-1">الحالة</p>
-                                    <p className="font-bold">{product.condition}</p>
+                                    <p className="font-bold">{conditionLabels[product.condition] || product.condition}</p>
                                 </div>
                                 <div className="flex-1">
                                     <p className="text-xs text-slate-500 dark:text-slate-400 font-bold mb-1">التصنيف</p>
-                                    <p className="font-bold">{product.category}</p>
+                                    <p className="font-bold">{categoryLabels[product.category] || product.category}</p>
                                 </div>
                             </div>
 
@@ -287,33 +302,29 @@ export default function ProductPage() {
                                 </>
                             )}
 
-                            {/* AI Pricing Analysis */}
-                            <div className="relative">
-                                <AIPricing productPrice={parseFloat(product.price)} productCategory={product.category} />
-                                {isOwner && (
-                                    <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl text-sm text-blue-800 dark:text-blue-300">
-                                        💡 نصيحة المالك: {parseFloat(product.price) > 1000 ? 'السعر يبدو مرتفعاً قليلاً مقارنة بالسوق، قد ترغب في تخفيضه.' : 'سعرك ممتاز ومنافس جداً!'}
-                                    </div>
-                                )}
-                            </div>
 
                             {/* Seller Info */}
-                            {product.seller && !isOwner && (
+                            {product.owner && !isOwner && (
                                 <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
                                     <p className="text-xs text-slate-500 dark:text-slate-400 font-bold mb-3">البائع</p>
                                     <div className="flex items-center gap-3">
                                         <img
-                                            src={product.seller.profile?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${product.seller.username}`}
-                                            alt={product.seller.username}
+                                            src={product.owner_profile?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${product.owner.username}`}
+                                            alt={product.owner.username}
                                             className="w-12 h-12 rounded-full border-2 border-primary"
                                         />
                                         <div className="flex-1">
-                                            <p className="font-bold">{product.seller.username}</p>
+                                            <p className="font-bold">{product.owner.first_name || product.owner.username}</p>
                                             <div className="flex items-center gap-2 text-sm">
-                                                <div className="flex items-center gap-1">
-                                                    <Star size={14} className="text-yellow-500 fill-yellow-500" />
-                                                    <span className="font-semibold">4.8</span>
-                                                </div>
+                                                {product.owner_profile && (
+                                                    <div className="flex items-center gap-1">
+                                                        <Star size={14} className="text-yellow-500 fill-yellow-500" />
+                                                        <span className="font-semibold">{product.owner_profile.seller_rating || 0}</span>
+                                                    </div>
+                                                )}
+                                                {product.owner_profile?.city && (
+                                                    <span className="text-slate-500">• {product.owner_profile.city}</span>
+                                                )}
                                             </div>
                                         </div>
                                     </div>

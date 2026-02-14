@@ -123,10 +123,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     
     def perform_create(self, serializer):
         """Set owner to current user when creating product"""
-        product = serializer.save(owner=self.request.user)
-        
-        # Generate AI price analysis
-        self.generate_ai_analysis(product)
+        serializer.save(owner=self.request.user)
     
     def generate_ai_analysis(self, product):
         """Generate AI price analysis for a product"""

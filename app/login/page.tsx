@@ -4,13 +4,14 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useLanguage } from '@/components/providers/language-provider';
+import { useAuth } from '@/components/providers/auth-provider';
 import { Leaf, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { authAPI } from '@/lib/api';
 
 export default function LoginPage() {
     const router = useRouter();
     const { dict } = useLanguage();
+    const { login } = useAuth();
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
@@ -22,11 +23,11 @@ export default function LoginPage() {
         setError(null);
 
         try {
-            await authAPI.login(username, password);
+            await login(username, password);
             // Successful login - redirect to homepage or dashboard
             // Check if there's a redirect query param
             const urlParams = new URLSearchParams(window.location.search);
-            const redirectUrl = urlParams.get('redirect') || '/';
+            const redirectUrl = urlParams.get('redirect') || '/dashboard';
             router.push(redirectUrl);
             router.refresh();
         } catch (err: any) {
