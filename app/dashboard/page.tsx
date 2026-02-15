@@ -1,21 +1,31 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+<<<<<<< HEAD
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+=======
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
 import { Navbar } from '@/components/layout/navbar';
 import { Footer } from '@/components/layout/footer';
 import { ProductCard } from '@/components/ui/product-card';
 import { SidebarFilters } from '@/components/ui/sidebar-filters';
 import { useLanguage } from '@/components/providers/language-provider';
+<<<<<<< HEAD
 import { useAuth } from '@/components/providers/auth-provider';
 import { Search, Loader2, Plus, Sparkles, Tag, ShoppingBag } from 'lucide-react';
+=======
+import { Search, Loader2 } from 'lucide-react';
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
 import { productsAPI } from '@/lib/api';
 
 export default function DashboardPage() {
     const { dict } = useLanguage();
+<<<<<<< HEAD
     const { user, loading: authLoading } = useAuth();
     const router = useRouter();
+=======
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
     const [searchQuery, setSearchQuery] = useState('');
     const [products, setProducts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -25,6 +35,10 @@ export default function DashboardPage() {
         min_price: undefined as number | undefined,
         max_price: undefined as number | undefined,
         condition: '',
+<<<<<<< HEAD
+=======
+        auctions_only: false,
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
     });
 
     const fetchProducts = useCallback(async () => {
@@ -39,6 +53,10 @@ export default function DashboardPage() {
             if (filters.min_price) params.min_price = filters.min_price;
             if (filters.max_price) params.max_price = filters.max_price;
             if (filters.condition) params.condition = filters.condition;
+<<<<<<< HEAD
+=======
+            if (filters.auctions_only) params.auctions_only = true;
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
 
             const response = await productsAPI.list(params);
             setProducts(response.results || []);
@@ -48,6 +66,7 @@ export default function DashboardPage() {
         } finally {
             setLoading(false);
         }
+<<<<<<< HEAD
     }, [searchQuery, filters.category, filters.min_price, filters.max_price, filters.condition]);
 
     useEffect(() => {
@@ -66,11 +85,19 @@ export default function DashboardPage() {
             condition: newFilters.condition || '',
         });
     }, []);
+=======
+    }, [searchQuery, filters.category, filters.min_price, filters.max_price, filters.condition, filters.auctions_only]);
+
+    useEffect(() => {
+        fetchProducts();
+    }, [fetchProducts]);
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
 
     const handleSearch = () => {
         fetchProducts();
     };
 
+<<<<<<< HEAD
     if (authLoading || !user) {
         return (
             <div className="flex min-h-screen items-center justify-center">
@@ -79,6 +106,8 @@ export default function DashboardPage() {
         );
     }
 
+=======
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
     return (
         <>
             <Navbar />
@@ -105,6 +134,7 @@ export default function DashboardPage() {
                         </div>
                     </div>
 
+<<<<<<< HEAD
                     <div className="flex justify-end mb-6">
                         <Link
                             href="/sell"
@@ -119,6 +149,14 @@ export default function DashboardPage() {
                         <div className="lg:col-span-1">
                             <SidebarFilters
                                 onFilterChange={handleFilterChange}
+=======
+                    <div className="grid lg:grid-cols-4 gap-6">
+                        <div className="lg:col-span-1">
+                            <SidebarFilters
+                                onFilterChange={useCallback((newFilters: any) => {
+                                    setFilters(prev => ({ ...prev, ...newFilters }));
+                                }, [])}
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
                             />
                         </div>
 
@@ -143,6 +181,7 @@ export default function DashboardPage() {
 
                             {!loading && !error && (
                                 <>
+<<<<<<< HEAD
                                     {products.length === 0 ? (
                                         <div className="text-center py-24">
                                             <div className="text-6xl mb-4">📦</div>
@@ -208,6 +247,29 @@ export default function DashboardPage() {
                                                     ))}
                                                 </div>
                                             </section>
+=======
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                                        {products.map((product) => (
+                                            <ProductCard
+                                                key={product.id}
+                                                product={{
+                                                    id: product.id.toString(),
+                                                    title: product.title,
+                                                    price: parseFloat(product.price),
+                                                    image: product.primary_image || product.images?.[0]?.image || product.image || '/placeholder.png',
+                                                    isAuction: product.is_auction || false,
+                                                    category: product.category,
+                                                    description: product.description,
+                                                    endTime: product.auction?.end_time,
+                                                }}
+                                            />
+                                        ))}
+                                    </div>
+
+                                    {products.length === 0 && (
+                                        <div className="text-center py-20">
+                                            <p className="text-slate-400 text-lg">لا توجد منتجات</p>
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
                                         </div>
                                     )}
                                 </>

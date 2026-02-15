@@ -1,5 +1,6 @@
 'use client';
 
+<<<<<<< HEAD
 import { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '@/components/providers/language-provider';
 import { Users, Package, Leaf, MapPin } from 'lucide-react';
@@ -58,6 +59,20 @@ export function Stats() {
             value: statsData.active_governorates || '0',
             color: 'text-orange-600'
         },
+=======
+import { useLanguage } from '@/components/providers/language-provider';
+import { Users, Package, Leaf, MapPin } from 'lucide-react';
+import { motion } from 'framer-motion';
+
+export function Stats() {
+    const { dict } = useLanguage();
+
+    const stats = [
+        { icon: Users, label: dict.stats.activeUsers, value: '+١٠,٠٠٠', color: 'text-blue-600' },
+        { icon: Package, label: dict.stats.productsSold, value: '+٥,٠٠٠', color: 'text-emerald-600' },
+        { icon: Leaf, label: dict.stats.scrapTons, value: '٨٠٠', color: 'text-green-600' },
+        { icon: MapPin, label: dict.stats.governorates, value: '٢٧', color: 'text-orange-600' },
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
     ];
 
     return (

@@ -10,8 +10,11 @@ from django.db import models
 from django_filters.rest_framework import DjangoFilterBackend
 from decimal import Decimal
 import random
+<<<<<<< HEAD
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+=======
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
 
 from .models import Product, ProductImage, Auction, Bid, UserProfile, AIPriceAnalysis
 from .serializers import (
@@ -20,6 +23,7 @@ from .serializers import (
     RegisterSerializer, AIPriceAnalysisSerializer
 )
 
+<<<<<<< HEAD
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         # Determine if the input is email or username
@@ -40,6 +44,8 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
+=======
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -107,9 +113,12 @@ class ProductViewSet(viewsets.ModelViewSet):
         # Filter active auctions only
         if self.request.query_params.get('auctions_only') == 'true':
             queryset = queryset.filter(is_auction=True, auction__is_active=True)
+<<<<<<< HEAD
         elif self.request.query_params.get('is_auction') is None:
             # Default to regular products only if listing type not specified
             queryset = queryset.filter(is_auction=False)
+=======
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
         
         return queryset
     
@@ -123,7 +132,24 @@ class ProductViewSet(viewsets.ModelViewSet):
     
     def perform_create(self, serializer):
         """Set owner to current user when creating product"""
+<<<<<<< HEAD
         serializer.save(owner=self.request.user)
+=======
+        product = serializer.save(owner=self.request.user)
+        
+        # Generate AI price analysis
+        self.generate_ai_analysis(product)
+        
+        # Create auction if requested
+        if product.is_auction and 'auction_end_time' in self.request.data:
+            end_time = self.request.data.get('auction_end_time')
+            Auction.objects.create(
+                product=product,
+                starting_bid=product.price,
+                current_bid=product.price,
+                end_time=end_time
+            )
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
     
     def generate_ai_analysis(self, product):
         """Generate AI price analysis for a product"""
@@ -251,6 +277,7 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         profile = get_object_or_404(UserProfile, user=request.user)
         serializer = self.get_serializer(profile)
         return Response(serializer.data)
+<<<<<<< HEAD
 
 
 @api_view(['GET'])
@@ -279,3 +306,5 @@ def get_general_stats(request):
         'scrap_count': scrap_count,
         'active_governorates': active_governorates
     })
+=======
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883

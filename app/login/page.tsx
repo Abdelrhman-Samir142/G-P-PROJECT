@@ -4,14 +4,23 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useLanguage } from '@/components/providers/language-provider';
+<<<<<<< HEAD
 import { useAuth } from '@/components/providers/auth-provider';
 import { Leaf, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+=======
+import { Leaf, Loader2 } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { authAPI } from '@/lib/api';
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
 
 export default function LoginPage() {
     const router = useRouter();
     const { dict } = useLanguage();
+<<<<<<< HEAD
     const { login } = useAuth();
+=======
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
@@ -23,6 +32,7 @@ export default function LoginPage() {
         setError(null);
 
         try {
+<<<<<<< HEAD
             await login(username, password);
             // Successful login - redirect to homepage or dashboard
             // Check if there's a redirect query param
@@ -30,6 +40,11 @@ export default function LoginPage() {
             const redirectUrl = urlParams.get('redirect') || '/dashboard';
             router.push(redirectUrl);
             router.refresh();
+=======
+            await authAPI.login(username, password);
+            // Successful login - redirect to dashboard
+            router.push('/dashboard');
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
         } catch (err: any) {
             console.error('Login error:', err);
             setError(err.message || 'فشل تسجيل الدخول. تحقق من بيانات الاعتماد الخاصة بك.');
@@ -70,13 +85,21 @@ export default function LoginPage() {
                         {/* Username */}
                         <div>
                             <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
+<<<<<<< HEAD
                                 اسم المستخدم أو البريد الإلكتروني
+=======
+                                {dict.login.email || 'اسم المستخدم'}
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
                             </label>
                             <input
                                 type="text"
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
+<<<<<<< HEAD
                                 placeholder="username or email"
+=======
+                                placeholder="username"
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
                                 className="w-full border border-slate-200 dark:border-slate-700 rounded-xl p-3 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 bg-white dark:bg-slate-900 transition-all"
                                 required
                                 disabled={loading}

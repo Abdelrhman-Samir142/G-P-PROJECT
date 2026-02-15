@@ -53,7 +53,11 @@ async function apiFetch<T>(
             clearAuthTokens();
 
             // Only redirect if NOT on login page and NOT checking auth status silently
+<<<<<<< HEAD
             if (!endpoint.includes('login') && !endpoint.includes('/auth/me/') && !endpoint.includes('/profiles/me/')) {
+=======
+            if (!endpoint.includes('login') && !endpoint.includes('/auth/me/')) {
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
                 if (typeof window !== 'undefined') {
                     window.location.href = '/login';
                 }
@@ -77,9 +81,13 @@ async function apiFetch<T>(
             if (messages) errorMessage = messages;
         }
 
+<<<<<<< HEAD
         const error = new Error(errorMessage || 'Request failed');
         (error as any).response = { data: errorData, status: response.status };
         throw error;
+=======
+        throw new Error(errorMessage || 'Request failed');
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
     }
 
     if (response.status === 204) {
@@ -182,6 +190,7 @@ export const productsAPI = {
             body: data,
         });
 
+<<<<<<< HEAD
         if (response.status >= 200 && response.status < 300) {
             try {
                 return await response.json();
@@ -227,6 +236,37 @@ export const productsAPI = {
             throw new Error(errorData.detail || 'Failed to update product');
         }
 
+=======
+        if (!response.ok) {
+            if (response.status === 401) {
+                clearAuthTokens();
+                if (typeof window !== 'undefined') {
+                    window.location.href = '/login';
+                }
+            }
+            const errorData = await response.json().catch(() => ({ detail: 'Failed to create product' }));
+
+            let errorMessage = errorData.detail || errorData.message;
+
+            if (!errorMessage && typeof errorData === 'object' && errorData !== null) {
+                const messages = Object.entries(errorData)
+                    .map(([key, value]) => {
+                        const msg = Array.isArray(value) ? value.join(', ') : String(value);
+                        return `${key}: ${msg}`;
+                    })
+                    .join(' | ');
+
+                if (messages) errorMessage = messages;
+            }
+
+            throw new Error(errorMessage || 'Failed to create product');
+        }
+
+        return response.json();
+    },
+
+    async update(id: string, data: Partial<any>) {
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
         return apiFetch<any>(`/products/${id}/`, {
             method: 'PATCH',
             body: JSON.stringify(data),
@@ -279,6 +319,7 @@ export const profilesAPI = {
         });
     },
 };
+<<<<<<< HEAD
 
 // General API
 export const generalAPI = {
@@ -291,3 +332,5 @@ export const generalAPI = {
         }>('/general-stats/');
     },
 };
+=======
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883

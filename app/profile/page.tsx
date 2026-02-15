@@ -99,10 +99,14 @@ export default function ProfilePage() {
 
                                 {/* Navigation */}
                                 <div className="space-y-2">
+<<<<<<< HEAD
                                     <button
                                         onClick={() => router.push('/my-listings')}
                                         className="w-full text-right p-3 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl text-sm font-bold flex items-center gap-3 transition-colors group"
                                     >
+=======
+                                    <button className="w-full text-right p-3 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl text-sm font-bold flex items-center gap-3 transition-colors group">
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
                                         <div className="bg-primary-100 dark:bg-primary-900/30 p-2 rounded-lg group-hover:bg-primary group-hover:text-white transition-colors">
                                             <Plus size={16} />
                                         </div>

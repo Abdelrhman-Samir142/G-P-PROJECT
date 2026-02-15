@@ -129,7 +129,11 @@ try {
 ### List Auctions
 ```typescript
 try {
+<<<<<<< HEAD
     const auctions = await auctionsAPI.list(true); 
+=======
+    const auctions = await auctionsAPI.list(true); // true for active only
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
     console.log('Active auctions:', auctions);
 } catch (error) {
     console.error('Error fetching auctions:', error);

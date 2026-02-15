@@ -4,7 +4,11 @@ export interface Product {
     price: number;
     image: string;
     isAuction: boolean;
+<<<<<<< HEAD
     category: 'scrap_metals' | 'electronics' | 'furniture' | 'cars' | 'real_estate' | 'other';
+=======
+    category: 'electronics' | 'furniture' | 'scrap' | 'other';
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
     description?: string;
     condition?: string;
     location?: string;
@@ -15,6 +19,7 @@ export interface Product {
     };
     biddingHistory?: Bid[];
     endTime?: string;
+<<<<<<< HEAD
     owner_name?: string;
     owner_avatar?: string;
     is_owner?: boolean;
@@ -24,6 +29,8 @@ export interface Product {
     views_count?: number;
     primary_image?: string;
     images?: { id: number; image: string; is_primary: boolean }[];
+=======
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
 }
 
 export interface Bid {

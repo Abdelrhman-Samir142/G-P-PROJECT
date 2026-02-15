@@ -2,7 +2,11 @@ Django==5.0.1
 djangorestframework==3.14.0
 djangorestframework-simplejwt==5.3.1
 psycopg2-binary==2.9.11
+<<<<<<< HEAD
 Pillow>=10.4.0
+=======
+Pillow==10.2.0
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
 django-cors-headers==4.3.1
 python-dotenv==1.0.0
 django-filter==24.1

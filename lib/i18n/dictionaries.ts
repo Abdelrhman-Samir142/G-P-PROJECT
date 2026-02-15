@@ -19,6 +19,7 @@ export const dictionaries = {
             aiAnalysis: 'الذكاء الاصطناعي',
             aiAnalysisDesc: 'تحليل الأسعار لحظياً',
         },
+<<<<<<< HEAD
         categories: {
             title: 'تصفح حسب الفئة',
             subtitle: 'كل اللي تحتاجه في مكان واحد',
@@ -45,6 +46,8 @@ export const dictionaries = {
                 desc: 'نظام تقييم ومراجعة عشان تضمن حقك في كل عملية بيع وشراء.',
             },
         },
+=======
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
         stats: {
             activeUsers: 'مستخدم نشط',
             productsSold: 'منتج مباع',
@@ -52,7 +55,11 @@ export const dictionaries = {
             governorates: 'محافظة',
         },
         dashboard: {
+<<<<<<< HEAD
             title: 'أحدث المنتجات',
+=======
+            title: 'أحدث المنتجات والمزادات',
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
             searchPlaceholder: 'ابحث هنا...',
             activeAuction: 'مزاد نشط',
         },
@@ -113,6 +120,7 @@ export const dictionaries = {
             aiAnalysis: 'Artificial Intelligence',
             aiAnalysisDesc: 'Real-time Price Analysis',
         },
+<<<<<<< HEAD
         categories: {
             title: 'Browse by Category',
             subtitle: 'Everything you need in one place',
@@ -139,6 +147,8 @@ export const dictionaries = {
                 desc: 'Rating and review system to ensure your rights in every transaction.',
             },
         },
+=======
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
         stats: {
             activeUsers: 'Active Users',
             productsSold: 'Products Sold',
@@ -146,7 +156,11 @@ export const dictionaries = {
             governorates: 'Governorates',
         },
         dashboard: {
+<<<<<<< HEAD
             title: 'Latest Products',
+=======
+            title: 'Latest Products and Auctions',
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
             searchPlaceholder: 'Search here...',
             activeAuction: 'Active Auction',
         },

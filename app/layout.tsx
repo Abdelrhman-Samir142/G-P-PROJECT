@@ -3,7 +3,10 @@ import { Inter, Cairo } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { LanguageProvider } from "@/components/providers/language-provider";
+<<<<<<< HEAD
 import { AuthProvider } from "@/components/providers/auth-provider";
+=======
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
 
 const inter = Inter({
   variable: "--font-inter",
@@ -46,11 +49,17 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+<<<<<<< HEAD
           <AuthProvider>
             <LanguageProvider>
               {children}
             </LanguageProvider>
           </AuthProvider>
+=======
+          <LanguageProvider>
+            {children}
+          </LanguageProvider>
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
         </ThemeProvider>
       </body>
     </html>

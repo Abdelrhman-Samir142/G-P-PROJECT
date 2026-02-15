@@ -33,12 +33,19 @@ class Product(models.Model):
     """Main product model for marketplace listings"""
     
     CATEGORY_CHOICES = [
+<<<<<<< HEAD
         ('electronics', 'أجهزة وإلكترونيات'),
         ('scrap_metals', 'خردة ومعادن'),
         ('books', 'كتب'),
         ('furniture', 'أثاث وديكور'),
         ('real_estate', 'عقارات'),
         ('other', 'أخرى'),
+=======
+        ('electronics', 'Electronics'),
+        ('furniture', 'Furniture'),
+        ('scrap', 'Scrap'),
+        ('other', 'Other'),
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
     ]
     
     CONDITION_CHOICES = [
@@ -63,10 +70,14 @@ class Product(models.Model):
     condition = models.CharField(max_length=10, choices=CONDITION_CHOICES, default='good')
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='active')
     location = models.CharField(max_length=200)
+<<<<<<< HEAD
     phone_number = models.CharField(max_length=20, blank=True, default='')
     is_auction = models.BooleanField(default=False)
     auction_start_time = models.DateTimeField(null=True, blank=True)
     auction_end_time = models.DateTimeField(null=True, blank=True)
+=======
+    is_auction = models.BooleanField(default=False)
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
     views_count = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -99,6 +110,7 @@ class ProductImage(models.Model):
         return f"Image for {self.product.title}"
 
 
+<<<<<<< HEAD
 class Favorite(models.Model):
     """User favorite products"""
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='favorites')
@@ -114,13 +126,18 @@ class Favorite(models.Model):
         return f"{self.user.username} likes {self.product.title}"
 
 
+=======
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
 class Auction(models.Model):
     """Auction model linked to products"""
     product = models.OneToOneField(Product, on_delete=models.CASCADE, related_name='auction')
     starting_bid = models.DecimalField(max_digits=10, decimal_places=2)
     current_bid = models.DecimalField(max_digits=10, decimal_places=2)
     highest_bidder = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='won_auctions')
+<<<<<<< HEAD
     start_time = models.DateTimeField(null=True, blank=True)
+=======
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
     end_time = models.DateTimeField()
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)

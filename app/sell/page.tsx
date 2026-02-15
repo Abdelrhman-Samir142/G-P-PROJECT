@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+<<<<<<< HEAD
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Navbar } from '@/components/layout/navbar';
 import { Footer } from '@/components/layout/footer';
@@ -9,6 +10,15 @@ import { useAuth } from '@/components/providers/auth-provider';
 import { Camera, Sparkles, Upload, X, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { productsAPI } from '@/lib/api';
+=======
+import { useRouter } from 'next/navigation';
+import { Navbar } from '@/components/layout/navbar';
+import { Footer } from '@/components/layout/footer';
+import { useLanguage } from '@/components/providers/language-provider';
+import { Camera, Sparkles, Upload, X, Loader2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { productsAPI, authAPI } from '@/lib/api';
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
 
 export default function SellPage() {
     const router = useRouter();
@@ -20,6 +30,7 @@ export default function SellPage() {
     const [formData, setFormData] = useState({
         title: '',
         price: '',
+<<<<<<< HEAD
         category: '',
         condition: 'good',
         description: '',
@@ -38,6 +49,28 @@ export default function SellPage() {
         router.push('/login?redirect=/sell');
         return null;
     }
+=======
+        category: 'electronics',
+        condition: 'good',
+        description: '',
+        location: '',
+    });
+    const [submitting, setSubmitting] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [checkingAuth, setCheckingAuth] = useState(true);
+
+    useEffect(() => {
+        const verifyAuth = async () => {
+            try {
+                await authAPI.getCurrentUser();
+                setCheckingAuth(false);
+            } catch (err) {
+                router.push('/login');
+            }
+        };
+        verifyAuth();
+    }, [router]);
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
 
     const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault();
@@ -81,12 +114,15 @@ export default function SellPage() {
         setImagePreviews((prev) => prev.filter((_, i) => i !== index));
     };
 
+<<<<<<< HEAD
     const getCurrentLocalTime = () => {
         const now = new Date();
         const offset = now.getTimezoneOffset() * 60000;
         return new Date(now.getTime() - offset).toISOString().slice(0, 16);
     };
 
+=======
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
     const validateStep = (currentStep: number) => {
         setError(null);
         if (currentStep === 2) {
@@ -94,6 +130,7 @@ export default function SellPage() {
             if (!formData.price || Number(formData.price) <= 0) return 'يرجى إدخال سعر صحيح';
             if (!formData.category) return 'يرجى اختيار القسم';
             if (!formData.location.trim()) return 'يرجى إدخال الموقع';
+<<<<<<< HEAD
             if (!formData.phone_number.trim()) return 'يرجى إدخال رقم الهاتف للتواصل';
             if (formData.is_auction) {
                 if (!formData.auction_start_time) return 'يرجى تحديد وقت وتاريخ بدء المزاد بالكامل';
@@ -102,6 +139,8 @@ export default function SellPage() {
                     return 'تاريخ الانتهاء يجب أن يكون بعد تاريخ البدء';
                 }
             }
+=======
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
             return null;
         }
         return null;
@@ -116,6 +155,7 @@ export default function SellPage() {
         setStep(prev => prev + 1);
     };
 
+<<<<<<< HEAD
     const searchParams = useSearchParams();
     const editId = searchParams.get('edit');
     const isEditMode = !!editId;
@@ -150,10 +190,16 @@ export default function SellPage() {
         }
     }, [editId, isEditMode]);
 
+=======
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
 
+<<<<<<< HEAD
+=======
+        // Final validation
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
         if (!formData.description.trim()) {
             setError('يرجى إضافة وصف للمنتج');
             return;
@@ -169,17 +215,21 @@ export default function SellPage() {
             formDataToSend.append('condition', formData.condition);
             formDataToSend.append('description', formData.description);
             formDataToSend.append('location', formData.location);
+<<<<<<< HEAD
             formDataToSend.append('phone_number', formData.phone_number);
             formDataToSend.append('is_auction', formData.is_auction.toString());
             if (formData.is_auction && formData.auction_end_time) {
                 formDataToSend.append('auction_start_time', new Date(formData.auction_start_time).toISOString());
                 formDataToSend.append('auction_end_time', new Date(formData.auction_end_time).toISOString());
             }
+=======
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
 
             uploadedImages.forEach((file) => {
                 formDataToSend.append('uploaded_images', file);
             });
 
+<<<<<<< HEAD
             if (isEditMode) {
                 await productsAPI.update(editId, formDataToSend);
             } else {
@@ -197,11 +247,22 @@ export default function SellPage() {
         } catch (err: any) {
             console.error('Error saving product:', err);
             setError(err.message || 'حدث خطأ في حفظ الإعلان');
+=======
+            await productsAPI.create(formDataToSend);
+            router.push('/dashboard');
+        } catch (err: any) {
+            console.error('Error creating product:', err);
+            setError(err.message || 'Failed to create product');
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
             setSubmitting(false);
         }
     };
 
+<<<<<<< HEAD
     if (authLoading) {
+=======
+    if (checkingAuth) {
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
         return (
             <>
                 <Navbar />
@@ -219,9 +280,13 @@ export default function SellPage() {
                 <div className="max-w-3xl mx-auto">
                     <div className="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
                         <div className="mb-8">
+<<<<<<< HEAD
                             <h2 className="text-2xl md:text-3xl font-bold mb-2 text-center">
                                 {isEditMode ? 'تحديث الإعلان' : dict.addItem.title}
                             </h2>
+=======
+                            <h2 className="text-2xl md:text-3xl font-bold mb-2 text-center">{dict.addItem.title}</h2>
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
                             <div className="flex items-center justify-center gap-2 mt-6">
                                 {[1, 2, 3].map((s) => (
                                     <div
@@ -333,6 +398,7 @@ export default function SellPage() {
                                                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                                                     className="w-full border border-slate-200 dark:border-slate-700 rounded-xl p-3 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 bg-white dark:bg-slate-900"
                                                 >
+<<<<<<< HEAD
                                                     <option value="">اختر التصنيف</option>
                                                     <option value="electronics">أجهزة وإلكترونيات</option>
                                                     <option value="scrap_metals">خردة ومعادن</option>
@@ -413,6 +479,14 @@ export default function SellPage() {
                                                 </motion.div>
                                             )}
                                         </div>
+=======
+                                                    <option value="electronics">{dict.addItem.electronics}</option>
+                                                    <option value="furniture">{dict.addItem.furniture}</option>
+                                                    <option value="scrap">{dict.addItem.scrap}</option>
+                                                </select>
+                                            </div>
+                                        </div>
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
                                         <div>
                                             <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-2">الموقع</label>
                                             <input
@@ -503,7 +577,11 @@ export default function SellPage() {
                                                 className="flex-1 bg-primary hover:bg-primary-700 text-white py-4 rounded-xl font-bold transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                             >
                                                 {submitting && <Loader2 className="animate-spin" size={20} />}
+<<<<<<< HEAD
                                                 {submitting ? 'جار الحفظ...' : (isEditMode ? 'تحديث الإعلان' : dict.addItem.publish)}
+=======
+                                                {submitting ? 'جار النشر...' : dict.addItem.publish}
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
                                             </button>
                                         </div>
                                     </motion.div>
@@ -512,7 +590,11 @@ export default function SellPage() {
                         </form>
                     </div>
                 </div>
+<<<<<<< HEAD
             </main >
+=======
+            </main>
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
             <Footer />
         </>
     );

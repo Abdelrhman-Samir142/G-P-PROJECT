@@ -1,6 +1,10 @@
 'use client';
 
+<<<<<<< HEAD
 import { useState, useEffect, useRef } from 'react';
+=======
+import { useState, useEffect } from 'react';
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import { useLanguage } from '@/components/providers/language-provider';
@@ -9,7 +13,11 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { authAPI, profilesAPI } from '@/lib/api';
+<<<<<<< HEAD
 import { useRouter, usePathname } from 'next/navigation';
+=======
+import { useRouter } from 'next/navigation';
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
 
 export function Navbar() {
     const { theme, setTheme } = useTheme();
@@ -18,6 +26,7 @@ export function Navbar() {
     const [user, setUser] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const router = useRouter();
+<<<<<<< HEAD
     const pathname = usePathname();
 
     const effectRan = useRef(false);
@@ -27,6 +36,11 @@ export function Navbar() {
         if (effectRan.current) return;
         effectRan.current = true;
 
+=======
+
+    // Fetch current user and profile
+    useEffect(() => {
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
         const fetchUser = async () => {
             try {
                 // Try to get full profile first to show avatar
@@ -78,22 +92,36 @@ export function Navbar() {
                     <div className="hidden md:flex items-center gap-6">
                         <Link
                             href="/"
+<<<<<<< HEAD
                             className={`text-sm font-semibold transition-colors relative pb-1 ${pathname === '/' ? 'text-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:rounded-full' : 'hover:text-primary'
                                 }`}
+=======
+                            className="text-sm font-semibold hover:text-primary transition-colors"
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
                         >
                             {dict.nav.home}
                         </Link>
                         <Link
+<<<<<<< HEAD
                             href={isLoggedIn ? "/dashboard" : "/login"}
                             className={`text-sm font-semibold transition-colors relative pb-1 ${pathname === '/dashboard' ? 'text-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:rounded-full' : 'hover:text-primary'
                                 }`}
+=======
+                            href="/dashboard"
+                            className="text-sm font-semibold hover:text-primary transition-colors"
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
                         >
                             {dict.nav.shop}
                         </Link>
                         <Link
+<<<<<<< HEAD
                             href={isLoggedIn ? "/auctions" : "/login"}
                             className={`text-sm font-semibold transition-colors relative pb-1 ${pathname === '/auctions' ? 'text-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:rounded-full' : 'hover:text-primary'
                                 }`}
+=======
+                            href="/dashboard"
+                            className="text-sm font-semibold hover:text-primary transition-colors"
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
                         >
                             {dict.nav.auctions}
                         </Link>
@@ -119,8 +147,11 @@ export function Navbar() {
                             {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
                         </button>
 
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
                         {/* Auth Buttons / User Menu */}
                         {!loading && (
                             <>
@@ -131,8 +162,13 @@ export function Navbar() {
                                                 {dict.nav.login}
                                             </button>
                                         </Link>
+<<<<<<< HEAD
                                         <Link href="/register">
                                             <button className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-sm hover:shadow-md">
+=======
+                                        <Link href="/login">
+                                            <button className="bg-primary hover:bg-primary-700 text-white px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-sm hover:shadow-md">
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
                                                 {dict.nav.register}
                                             </button>
                                         </Link>
@@ -189,24 +225,37 @@ export function Navbar() {
                             <div className="flex flex-col gap-3">
                                 <Link
                                     href="/"
+<<<<<<< HEAD
                                     className={`px-4 py-2 rounded-lg font-semibold ${pathname === '/' ? 'bg-primary/10 text-primary border-r-4 border-primary' : 'hover:bg-slate-100 dark:hover:bg-slate-800'
                                         }`}
+=======
+                                    className="px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg font-semibold"
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
                                     onClick={() => setMobileMenuOpen(false)}
                                 >
                                     {dict.nav.home}
                                 </Link>
                                 <Link
                                     href="/dashboard"
+<<<<<<< HEAD
                                     className={`px-4 py-2 rounded-lg font-semibold ${pathname === '/dashboard' ? 'bg-primary/10 text-primary border-r-4 border-primary' : 'hover:bg-slate-100 dark:hover:bg-slate-800'
                                         }`}
+=======
+                                    className="px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg font-semibold"
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
                                     onClick={() => setMobileMenuOpen(false)}
                                 >
                                     {dict.nav.shop}
                                 </Link>
                                 <Link
+<<<<<<< HEAD
                                     href="/auctions"
                                     className={`px-4 py-2 rounded-lg font-semibold ${pathname === '/auctions' ? 'bg-primary/10 text-primary border-r-4 border-primary' : 'hover:bg-slate-100 dark:hover:bg-slate-800'
                                         }`}
+=======
+                                    href="/dashboard"
+                                    className="px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg font-semibold"
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
                                     onClick={() => setMobileMenuOpen(false)}
                                 >
                                     {dict.nav.auctions}

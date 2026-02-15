@@ -4,7 +4,10 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useLanguage } from '@/components/providers/language-provider';
+<<<<<<< HEAD
 import { useAuth } from '@/components/providers/auth-provider';
+=======
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
 import { Leaf, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { authAPI } from '@/lib/api';
@@ -12,7 +15,10 @@ import { authAPI } from '@/lib/api';
 export default function RegisterPage() {
     const router = useRouter();
     const { dict } = useLanguage();
+<<<<<<< HEAD
     const { refreshUser } = useAuth();
+=======
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
 
     // Form state
     const [formData, setFormData] = useState({
@@ -51,8 +57,11 @@ export default function RegisterPage() {
         try {
             await authAPI.register(formData);
             // Successful registration - authAPI.register automatically sets tokens
+<<<<<<< HEAD
             // Refresh the auth context so the user state is populated
             await refreshUser();
+=======
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
             // Redirect to dashboard
             router.push('/dashboard');
         } catch (err: any) {
@@ -126,7 +135,11 @@ export default function RegisterPage() {
                         {/* Username */}
                         <div>
                             <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
+<<<<<<< HEAD
                                 اسم المستخدم
+=======
+                                {dict.login?.email || 'اسم المستخدم'}
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
                             </label>
                             <input
                                 type="text"

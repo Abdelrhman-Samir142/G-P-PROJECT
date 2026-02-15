@@ -72,34 +72,48 @@ class AIPriceAnalysisSerializer(serializers.ModelSerializer):
 class ProductListSerializer(serializers.ModelSerializer):
     """Lightweight product serializer for list views"""
     owner_name = serializers.CharField(source='owner.username', read_only=True)
+<<<<<<< HEAD
     owner_avatar = serializers.SerializerMethodField()
     primary_image = serializers.SerializerMethodField()
     is_auction = serializers.BooleanField(read_only=True)
     is_owner = serializers.SerializerMethodField()
     is_favorited = serializers.SerializerMethodField()
     time_since_posted = serializers.SerializerMethodField()
+=======
+    primary_image = serializers.SerializerMethodField()
+    is_auction = serializers.BooleanField(read_only=True)
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
     
     class Meta:
         model = Product
         fields = [
             'id', 'title', 'price', 'category', 'condition', 'status',
+<<<<<<< HEAD
             'location', 'phone_number', 'is_auction', 'auction_start_time',
             'auction_end_time', 'primary_image', 'owner_name', 'owner_avatar',
             'is_owner', 'is_favorited', 'time_since_posted', 'views_count', 'created_at'
+=======
+            'location', 'is_auction', 'primary_image', 'owner_name',
+            'views_count', 'created_at'
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
         ]
         read_only_fields = ['id', 'owner_name', 'views_count', 'created_at']
     
     def get_primary_image(self, obj):
         primary_img = obj.images.filter(is_primary=True).first()
+<<<<<<< HEAD
         if not primary_img:
              primary_img = obj.images.order_by('order').first()
         
+=======
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
         if primary_img:
             request = self.context.get('request')
             if request:
                 return request.build_absolute_uri(primary_img.image.url)
         return None
 
+<<<<<<< HEAD
     def get_owner_avatar(self, obj):
         try:
             if hasattr(obj.owner, 'profile') and obj.owner.profile.avatar:
@@ -148,6 +162,8 @@ class ProductListSerializer(serializers.ModelSerializer):
             years = diff.days // 365
             return f"منذ {years} سنة"
 
+=======
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
 
 class ProductDetailSerializer(serializers.ModelSerializer):
     """Detailed product serializer with all relations"""
@@ -162,8 +178,13 @@ class ProductDetailSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'owner', 'owner_profile', 'title', 'description', 
             'price', 'category', 'condition', 'status', 'location',
+<<<<<<< HEAD
             'phone_number', 'is_auction', 'auction_start_time', 'auction_end_time', 
             'views_count', 'images', 'auction', 'ai_analysis', 'created_at', 'updated_at'
+=======
+            'is_auction', 'views_count', 'images', 'auction', 
+            'ai_analysis', 'created_at', 'updated_at'
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
         ]
         read_only_fields = ['id', 'owner', 'views_count', 'created_at', 'updated_at']
     
@@ -193,13 +214,19 @@ class ProductCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = [
+<<<<<<< HEAD
             'id', 'title', 'description', 'price', 'category', 'condition', 
             'location', 'phone_number', 'is_auction', 'auction_start_time', 
             'auction_end_time', 'images', 'uploaded_images'
+=======
+            'id', 'title', 'description', 'price', 'category', 
+            'condition', 'location', 'is_auction', 'images', 'uploaded_images'
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
         ]
         read_only_fields = ['id']
     
     def create(self, validated_data):
+<<<<<<< HEAD
         try:
             uploaded_images = validated_data.pop('uploaded_images', [])
             product = Product.objects.create(**validated_data)
@@ -246,6 +273,21 @@ class ProductCreateSerializer(serializers.ModelSerializer):
                 "warning": "Product created but failed to serialize response",
                 "error": str(e)
             }
+=======
+        uploaded_images = validated_data.pop('uploaded_images', [])
+        product = Product.objects.create(**validated_data)
+        
+        # Create product images
+        for idx, image in enumerate(uploaded_images):
+            ProductImage.objects.create(
+                product=product,
+                image=image,
+                is_primary=(idx == 0),
+                order=idx
+            )
+        
+        return product
+>>>>>>> 015db9240893bec0dddc862319a27d07dfebd883
 
 
 class RegisterSerializer(serializers.ModelSerializer):
