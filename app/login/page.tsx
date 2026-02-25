@@ -5,8 +5,9 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useLanguage } from '@/components/providers/language-provider';
 import { useAuth } from '@/components/providers/auth-provider';
-import { Leaf, Loader2 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Leaf, Loader2, AlertCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { staggerContainer, staggerItem } from '@/lib/animations';
 
 export default function LoginPage() {
     const router = useRouter();
@@ -24,8 +25,6 @@ export default function LoginPage() {
 
         try {
             await login(username, password);
-            // Successful login - redirect to homepage or dashboard
-            // Check if there's a redirect query param
             const urlParams = new URLSearchParams(window.location.search);
             const redirectUrl = urlParams.get('redirect') || '/dashboard';
             router.push(redirectUrl);
@@ -39,36 +38,86 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-black">
+        <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-black overflow-hidden relative">
+            {/* Background blobs */}
             <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="w-full max-w-md"
+                className="absolute top-10 left-10 w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none"
+                animate={{ scale: [1, 1.15, 1], opacity: [0.5, 0.8, 0.5] }}
+                transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+            />
+            <motion.div
+                className="absolute bottom-10 right-10 w-80 h-80 bg-green-400/10 rounded-full blur-3xl pointer-events-none"
+                animate={{ scale: [1, 1.2, 1], opacity: [0.4, 0.7, 0.4] }}
+                transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut', delay: 1.5 }}
+            />
+
+            <motion.div
+                initial={{ opacity: 0, y: 30, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+                className="w-full max-w-md relative z-10"
             >
                 {/* Logo */}
-                <Link href="/" className="flex items-center justify-center gap-2 mb-8">
-                    <div className="bg-primary p-3 rounded-xl text-white">
-                        <Leaf size={28} />
-                    </div>
-                    <span className="text-2xl font-bold">
-                        Refurb<span className="text-primary">AI</span>
-                    </span>
-                </Link>
+                <motion.div
+                    initial={{ opacity: 0, y: -16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                >
+                    <Link href="/" className="flex items-center justify-center gap-2 mb-8">
+                        <motion.div
+                            whileHover={{ scale: 1.1, rotate: 8 }}
+                            transition={{ type: 'spring', stiffness: 360, damping: 18 }}
+                            className="bg-primary p-3 rounded-xl text-white"
+                        >
+                            <Leaf size={28} />
+                        </motion.div>
+                        <span className="text-2xl font-bold">
+                            Refurb<span className="text-primary">AI</span>
+                        </span>
+                    </Link>
+                </motion.div>
 
                 {/* Login Card */}
-                <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl">
-                    <h2 className="text-2xl md:text-3xl font-bold mb-6 text-center">{dict.login.title}</h2>
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.15, duration: 0.5 }}
+                    className="bg-white dark:bg-slate-800 p-8 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl"
+                >
+                    <motion.h2
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.25 }}
+                        className="text-2xl md:text-3xl font-bold mb-6 text-center"
+                    >
+                        {dict.login.title}
+                    </motion.h2>
 
                     {/* Error Message */}
-                    {error && (
-                        <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
-                            <p className="text-red-600 dark:text-red-400 text-sm text-center">{error}</p>
-                        </div>
-                    )}
+                    <AnimatePresence>
+                        {error && (
+                            <motion.div
+                                initial={{ opacity: 0, y: -10, scale: 0.97 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0, y: -8, scale: 0.97 }}
+                                transition={{ duration: 0.3 }}
+                                className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-center gap-2"
+                            >
+                                <AlertCircle size={16} className="text-red-500 shrink-0" />
+                                <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
 
-                    <form onSubmit={handleSubmit} className="space-y-4">
+                    <motion.form
+                        onSubmit={handleSubmit}
+                        className="space-y-4"
+                        variants={staggerContainer}
+                        initial="hidden"
+                        animate="visible"
+                    >
                         {/* Username */}
-                        <div>
+                        <motion.div variants={staggerItem}>
                             <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
                                 اسم المستخدم أو البريد الإلكتروني
                             </label>
@@ -81,10 +130,10 @@ export default function LoginPage() {
                                 required
                                 disabled={loading}
                             />
-                        </div>
+                        </motion.div>
 
                         {/* Password */}
-                        <div>
+                        <motion.div variants={staggerItem}>
                             <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
                                 {dict.login.password}
                             </label>
@@ -97,41 +146,56 @@ export default function LoginPage() {
                                 required
                                 disabled={loading}
                             />
-                        </div>
+                        </motion.div>
 
                         {/* Forgot Password */}
-                        <div className="text-left">
-                            <button type="button" className="text-sm text-primary hover:text-primary-700 font-semibold">
+                        <motion.div variants={staggerItem} className="text-left">
+                            <button type="button" className="text-sm text-primary hover:text-primary-700 font-semibold transition-colors">
                                 نسيت كلمة المرور؟
                             </button>
-                        </div>
+                        </motion.div>
 
-                        {/* Submit Button */}
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="w-full bg-primary hover:bg-primary-700 text-white py-4 rounded-xl font-bold transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                        >
-                            {loading && <Loader2 className="animate-spin" size={20} />}
-                            {loading ? 'جار تسجيل الدخول...' : dict.login.submit}
-                        </button>
-                    </form>
+                        {/* Submit */}
+                        <motion.div variants={staggerItem}>
+                            <motion.button
+                                type="submit"
+                                disabled={loading}
+                                whileHover={!loading ? { scale: 1.02, boxShadow: '0 6px 20px rgba(22,163,74,0.35)' } : {}}
+                                whileTap={!loading ? { scale: 0.97 } : {}}
+                                transition={{ type: 'spring', stiffness: 380, damping: 20 }}
+                                className="w-full bg-primary hover:bg-primary-700 text-white py-4 rounded-xl font-bold shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
+                            >
+                                {loading && <Loader2 className="animate-spin" size={20} />}
+                                {loading ? 'جار تسجيل الدخول...' : dict.login.submit}
+                            </motion.button>
+                        </motion.div>
+                    </motion.form>
 
                     {/* Sign Up Link */}
-                    <p className="text-center text-sm text-slate-500 dark:text-slate-400 mt-6 font-semibold">
+                    <motion.p
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.6 }}
+                        className="text-center text-sm text-slate-500 dark:text-slate-400 mt-6 font-semibold"
+                    >
                         {dict.login.noAccount}{' '}
-                        <Link href="/register" className="text-primary hover:text-primary-700 font-bold">
+                        <Link href="/register" className="text-primary hover:text-primary-700 font-bold transition-colors">
                             {dict.login.createAccount || 'سجل حساب جديد'}
                         </Link>
-                    </p>
-                </div>
+                    </motion.p>
+                </motion.div>
 
                 {/* Back to Home */}
-                <div className="text-center mt-6">
-                    <Link href="/" className="text-sm text-slate-600 dark:text-slate-400 hover:text-primary font-semibold">
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.7 }}
+                    className="text-center mt-6"
+                >
+                    <Link href="/" className="text-sm text-slate-600 dark:text-slate-400 hover:text-primary font-semibold transition-colors">
                         ← العودة للرئيسية
                     </Link>
-                </div>
+                </motion.div>
             </motion.div>
         </div>
     );

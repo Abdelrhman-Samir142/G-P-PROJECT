@@ -58,7 +58,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const logout = () => {
         authAPI.logout();
-        setUser(null);
+        // Full page reload to '/' — no need to setUser(null) here.
+        // Setting state before navigation causes protected pages (dashboard etc.)
+        // to see user=null and race-redirect to /login before the browser lands on '/'.
+        window.location.href = '/';
     };
 
     const refreshUser = async () => {

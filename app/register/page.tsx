@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useLanguage } from '@/components/providers/language-provider';
 import { useAuth } from '@/components/providers/auth-provider';
-import { Leaf, Loader2 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Leaf, Loader2, AlertCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { authAPI } from '@/lib/api';
 
 export default function RegisterPage() {
@@ -65,17 +65,33 @@ export default function RegisterPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-black">
+        <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-black overflow-hidden relative">
+            {/* Background blobs */}
             <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="w-full max-w-lg"
+                className="absolute top-10 right-10 w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none"
+                animate={{ scale: [1, 1.15, 1], opacity: [0.5, 0.8, 0.5] }}
+                transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+            />
+            <motion.div
+                className="absolute bottom-10 left-10 w-80 h-80 bg-green-400/10 rounded-full blur-3xl pointer-events-none"
+                animate={{ scale: [1, 1.2, 1], opacity: [0.4, 0.7, 0.4] }}
+                transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut', delay: 1.5 }}
+            />
+            <motion.div
+                initial={{ opacity: 0, y: 30, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+                className="w-full max-w-lg relative z-10"
             >
                 {/* Logo */}
                 <Link href="/" className="flex items-center justify-center gap-2 mb-8">
-                    <div className="bg-primary p-3 rounded-xl text-white">
+                    <motion.div
+                        whileHover={{ scale: 1.1, rotate: 8 }}
+                        transition={{ type: 'spring', stiffness: 360, damping: 18 }}
+                        className="bg-primary p-3 rounded-xl text-white"
+                    >
                         <Leaf size={28} />
-                    </div>
+                    </motion.div>
                     <span className="text-2xl font-bold">
                         Refurb<span className="text-primary">AI</span>
                     </span>
@@ -86,11 +102,20 @@ export default function RegisterPage() {
                     <h2 className="text-2xl md:text-3xl font-bold mb-6 text-center">إنشاء حساب جديد</h2>
 
                     {/* Error Message */}
-                    {error && (
-                        <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
-                            <p className="text-red-600 dark:text-red-400 text-sm text-center">{error}</p>
-                        </div>
-                    )}
+                    <AnimatePresence>
+                        {error && (
+                            <motion.div
+                                initial={{ opacity: 0, y: -10, scale: 0.97 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0, y: -8, scale: 0.97 }}
+                                transition={{ duration: 0.3 }}
+                                className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-center gap-2"
+                            >
+                                <AlertCircle size={16} className="text-red-500 shrink-0" />
+                                <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
 
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -220,14 +245,17 @@ export default function RegisterPage() {
                         </div>
 
                         {/* Submit Button */}
-                        <button
+                        <motion.button
                             type="submit"
                             disabled={loading}
-                            className="w-full bg-primary hover:bg-primary-700 text-white py-4 rounded-xl font-bold transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-6"
+                            whileHover={!loading ? { scale: 1.02, boxShadow: '0 6px 20px rgba(22,163,74,0.35)' } : {}}
+                            whileTap={!loading ? { scale: 0.97 } : {}}
+                            transition={{ type: 'spring', stiffness: 380, damping: 20 }}
+                            className="w-full bg-primary hover:bg-primary-700 text-white py-4 rounded-xl font-bold shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-6 transition-colors"
                         >
                             {loading && <Loader2 className="animate-spin" size={20} />}
                             {loading ? 'جار إنشاء الحساب...' : 'إنشاء حساب جديد'}
-                        </button>
+                        </motion.button>
                     </form>
 
                     {/* Login Link */}

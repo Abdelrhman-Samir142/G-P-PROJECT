@@ -78,6 +78,7 @@ class AuctionSerializer(serializers.ModelSerializer):
 class ProductListSerializer(serializers.ModelSerializer):
     """Lightweight product serializer for list views"""
     owner_name = serializers.CharField(source='owner.username', read_only=True)
+    owner_id = serializers.IntegerField(source='owner.id', read_only=True)
     primary_image = serializers.SerializerMethodField()
     is_auction = serializers.BooleanField(read_only=True)
     
@@ -86,9 +87,9 @@ class ProductListSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'title', 'price', 'category', 'condition', 'status',
             'location', 'phone_number', 'is_auction',
-            'auction_end_time', 'primary_image', 'owner_name', 'views_count', 'created_at'
+            'auction_end_time', 'primary_image', 'owner_name', 'owner_id', 'views_count', 'created_at'
         ]
-        read_only_fields = ['id', 'owner_name', 'views_count', 'created_at']
+        read_only_fields = ['id', 'owner_name', 'owner_id', 'views_count', 'created_at']
     
     def get_primary_image(self, obj):
         primary_img = obj.images.filter(is_primary=True).first()

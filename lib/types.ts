@@ -8,6 +8,7 @@ export interface Product {
     description?: string;
     condition?: string;
     location?: string;
+    createdAt?: string;
     seller?: {
         name: string;
         avatar: string;

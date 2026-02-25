@@ -13,7 +13,7 @@ export const dictionaries = {
             badge: 'مشروع تخرج - ٢٠٢٤',
             title: 'سوقك الذكي لبيع المستعمل',
             titleHighlight: 'والخردة في مصر',
-            description: 'وفر فلوسك وساهم في حماية البيئة. منصتنا بتستخدم الذكاء الاصطناعي عشان تسعير منتجك وتوصلك بالمشتري الصح في أسرع وقت.',
+            description: 'اشتري وبيع المستعمل بسهولة وأمان. استمتع بتجربة مزادات مباشرة، وبيع منتجك للمشتري الصح في أسرع وقت.',
             browseProducts: 'تصفح المنتجات',
             addListing: 'إضافة إعلان',
             aiAnalysis: 'الذكاء الاصطناعي',
@@ -33,8 +33,8 @@ export const dictionaries = {
             title: 'ليه تختار 4Sale؟',
             subtitle: 'مميزات ذكية بتغير طريقة البيع والشراء',
             aiPricing: {
-                title: 'تسعير ذكي',
-                desc: 'خوارزميات ذكية بتقترح عليك أفضل سعر لمنتجك بناءً على حالة السوق.',
+                title: 'مزادات مباشرة 🔨',
+                desc: 'شارك في مزادات حية وقدّم عرضك في أي وقت — أعلى سعر يفوز بالمنتج.',
             },
             smartSearch: {
                 title: 'بحث متطور',
@@ -107,7 +107,7 @@ export const dictionaries = {
             badge: 'Graduation Project - 2024',
             title: 'Your Smart Marketplace for Used Items',
             titleHighlight: 'and Scrap in Egypt',
-            description: 'Save money and contribute to environmental protection. Our platform uses AI to price your product and connect you with the right buyer as quickly as possible.',
+            description: 'Buy and sell used items with ease and security. Enjoy live auction experiences and reach the right buyer in no time.',
             browseProducts: 'Browse Products',
             addListing: 'Add Listing',
             aiAnalysis: 'Artificial Intelligence',
@@ -127,8 +127,8 @@ export const dictionaries = {
             title: 'Why Choose 4Sale?',
             subtitle: 'Smart features changing the way you buy and sell',
             aiPricing: {
-                title: 'Smart Pricing',
-                desc: 'Intelligent algorithms suggest the best price for your item based on market trends.',
+                title: 'Live Auctions 🔨',
+                desc: 'Join live auctions and place your bid anytime — highest offer wins the item.',
             },
             smartSearch: {
                 title: 'Advanced Search',
