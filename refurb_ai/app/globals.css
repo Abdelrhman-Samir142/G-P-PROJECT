@@ -1,0 +1,226 @@
+/* REDESIGN: Complete Design System — "Option A: Dark Premium" */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ═══════════════════════════════════════════════════════════
+   DESIGN TOKENS
+   ═══════════════════════════════════════════════════════════ */
+@layer base {
+  :root {
+    /* REDESIGN: Color Palette (Light Mode) */
+    --color-bg: #FAF8F5;
+    --color-surface: rgba(255, 255, 255, 0.85);
+    --color-surface-elevated: #FFFFFF;
+    --color-border: rgba(0, 0, 0, 0.10);
+    --color-border-active: rgba(5, 150, 105, 0.4);
+    --color-text-primary: #1A1208;
+    --color-text-secondary: #4A3E31;
+    --color-text-muted: #6B5E4E;
+    --color-primary: #059669; /* Emerald 600 */
+    --color-accent: #D97706; /* Amber 600 */
+    --color-glow: rgba(5, 150, 105, 0.2);
+    --color-danger: #ef4444;
+
+    /* REDESIGN: Spacing Scale */
+    --space-xs: 0.25rem;
+    --space-sm: 0.5rem;
+    --space-md: 1rem;
+    --space-lg: 1.5rem;
+    --space-xl: 2rem;
+    --space-2xl: 3rem;
+    --space-3xl: 4rem;
+    --space-4xl: 6rem;
+
+    /* REDESIGN: Radius Scale */
+    --radius-sm: 0.75rem;
+    --radius-md: 1rem;
+    --radius-lg: 1.5rem;
+    --radius-xl: 2rem;
+    --radius-2xl: 20px; /* the requested 20px for product cards */
+    --radius-pill: 100px;
+
+    /* REDESIGN: Shadow Scale */
+    --shadow-xs: 0 1px 2px rgba(0,0,0,0.5);
+    --shadow-sm: 0 4px 12px rgba(0,0,0,0.4);
+    --shadow-md: 0 8px 30px rgba(0,0,0,0.5);
+    --shadow-lg: 0 20px 50px rgba(0,0,0,0.6);
+    --shadow-glow: 0 20px 60px var(--color-glow);
+
+    /* REDESIGN: Blur */
+    --blur-glass: 20px;
+    --blur-heavy: 60px;
+  }
+
+  .dark {
+    /* REDESIGN: Color Palette (Option A) */
+    --color-bg: #0A0A0F;
+    --color-surface: rgba(18, 18, 26, 0.75);
+    --color-surface-elevated: rgba(18, 18, 26, 0.95);
+    --color-border: rgba(255, 255, 255, 0.08);
+    --color-border-active: rgba(255, 107, 53, 0.4);
+    --color-text-primary: #F0EEE8;
+    --color-text-secondary: #C0BDC5;
+    --color-text-muted: #8A8A9A;
+    --color-primary: #FF6B35;
+    --color-accent: #FFD700;
+    --color-glow: rgba(255, 107, 53, 0.3);
+    --color-danger: #ef4444;
+  }
+
+  /* REDESIGN: Body base */
+  body {
+    font-feature-settings: "rlig" 1, "calt" 1;
+    background: var(--color-bg);
+    color: var(--color-text-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* REDESIGN: Selection */
+  ::selection {
+    background: var(--color-glow);
+    color: #fff;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CUSTOM SCROLLBAR
+   ═══════════════════════════════════════════════════════════ */
+/* REDESIGN: Premium custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 100px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 107, 53, 0.5);
+  background-clip: content-box;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.1) var(--color-bg);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   NOISE TEXTURE OVERLAY
+   ═══════════════════════════════════════════════════════════ */
+/* REDESIGN: Subtle grain overlay */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 200px 200px;
+}
+
+@layer utilities {
+  /* REDESIGN: Scrollbar hide utility */
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* RTL/LTR layout direction */
+[dir="rtl"] {
+  direction: rtl;
+}
+[dir="ltr"] {
+  direction: ltr;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   FOCUS STATES
+   ═══════════════════════════════════════════════════════════ */
+/* REDESIGN: Beautiful focus rings */
+*:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   GLOBAL ANIMATION KEYFRAMES
+   ═══════════════════════════════════════════════════════════ */
+/* REDESIGN: Entrance animation */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* REDESIGN: Breathing / floating effect */
+@keyframes breathe {
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.08); opacity: 0.9; }
+}
+
+/* REDESIGN: Shimmer for loading */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* REDESIGN: Gentle pulse glow */
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 0 0 var(--color-glow); }
+  50% { box-shadow: 0 0 20px 4px var(--color-glow); }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   UTILITY CLASSES
+   ═══════════════════════════════════════════════════════════ */
+/* REDESIGN: Glass surface */
+.glass-surface {
+  background: var(--color-surface);
+  backdrop-filter: blur(var(--blur-glass)) saturate(150%);
+  -webkit-backdrop-filter: blur(var(--blur-glass)) saturate(150%);
+  border: 1px solid var(--color-border);
+}
+
+/* REDESIGN: Gradient styles */
+.gradient-primary {
+  background: linear-gradient(135deg, var(--color-primary), #E65A28);
+}
+
+.gradient-accent {
+  background: linear-gradient(135deg, var(--color-accent), #DBA800);
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
