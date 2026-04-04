@@ -93,7 +93,7 @@ export default function RegisterPage() {
                         <Leaf size={28} />
                     </motion.div>
                     <span className="text-2xl font-bold">
-                        Refurb<span className="text-primary">AI</span>
+                        <span className="text-primary">4</span>Sale
                     </span>
                 </Link>
 

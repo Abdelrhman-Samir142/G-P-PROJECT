@@ -307,7 +307,7 @@ export default function DashboardPage() {
                                             animate={{ opacity: 1, x: 0 }}
                                             transition={{ duration: 0.45 }}
                                         >
-                                            <SidebarFilters onFilterChange={handleFilterChange} />
+                                            <SidebarFilters currentFilters={filters} onFilterChange={handleFilterChange} />
                                         </motion.div>
                                         <div className="lg:col-span-3">
                                             <p className="text-slate-500 text-sm mb-4">
@@ -445,7 +445,7 @@ export default function DashboardPage() {
                                                     viewport={{ once: true }}
                                                     transition={{ duration: 0.45 }}
                                                 >
-                                                    <SidebarFilters onFilterChange={handleFilterChange} />
+                                                    <SidebarFilters currentFilters={filters} onFilterChange={handleFilterChange} />
                                                 </motion.div>
 
                                                 {/* Products Grid */}

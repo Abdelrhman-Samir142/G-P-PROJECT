@@ -1,97 +1,151 @@
-# RefurbAI - AI-Powered Sustainable Marketplace
+# 4Sale — Marketplace for Used Items & Scrap in Egypt 🇪🇬
 
-A professional, production-ready marketplace built with Next.js 14+ (App Router), TypeScript, and Tailwind CSS. RefurbAI is designed for Egypt's circular economy, enabling users to buy and sell used items and scrap with AI-powered pricing analysis.
+A full-stack marketplace platform built as a graduation project, enabling users to **buy, sell, and auction** used items and scrap across Egypt. The platform features a Django REST Framework backend, a Next.js 14 frontend, and a YOLO-powered AI layer for automatic image classification and smart bidding agents.
+
+---
 
 ## 🚀 Features
 
-### Core Features
-- **🌓 Dark/Light Mode**: Seamless theme switching with `next-themes`
-- **🌍 Bilingual Support**: Arabic (RTL) and English (LTR) with dictionary-based i18n
-- **🤖 AI Pricing Analysis**: Futuristic scanning animation with glassmorphism effects
-- **⏰ Live Auctions**: Real-time countdown timers and bidding system
-- **📱 Mobile-First**: Responsive design with bottom navigation for mobile
-- **🎨 Modern UI/UX**: Framer Motion animations, glassmorphism, and smooth transitions
+### 🛒 Marketplace
+- Browse, search, and filter product listings by category, price range, and condition
+- Sectioned homepage store: **Active Auctions → Recommended → Latest → All Products**
+- Product detail pages with full seller info, images, and contact
+- Relative timestamps on every card (e.g. "منذ دقيقتين")
+- Owners cannot wishlist their own products
 
-### Pages
-1. **Landing Page** (`/`) - High-conversion hero with AI feature showcase
-2. **Dashboard** (`/dashboard`) - Product grid with advanced sidebar filters
-3. **Product Details** (`/product/[id]`) - Full details with bidding history and seller profile
-4. **Sell/Add Listing** (`/sell`) - Multi-step form with drag-and-drop image upload
-5. **User Profile** (`/profile`) - Stats, active listings, and trust score visualization
-6. **Login** (`/login`) - Authentication page
+### 🔨 Live Auctions
+- Create auction listings with a set end time
+- Real-time countdown timer on product cards and detail pages
+- Place bids — must exceed current bid
+- Auto-close expired auctions + auto-notify the winner via in-app chat
+- Owners **cannot** bid on their own auctions (backend enforced)
+
+### 🤖 AI Auto-Bidder Agent (`/agent`)
+- Users configure personal AI agents that watch for specific item types (detected by YOLO)
+- Set a maximum budget; the agent automatically counter-bids on matching auctions
+- Agents can be paused, resumed, or deleted
+- In-app notification center for agent actions (bid placed, outbid, won)
+
+### 🧠 AI Image Classification
+- Upload a product image during listing creation
+- YOLO model (`ai/classifier.py`) detects the item type and auto-fills the category
+- Supports: electronics, furniture, scrap metals, cars, books, real estate, and more
+
+### 💬 Chat System (`/messages`)
+- Buyer-to-seller direct messaging per product
+- Unread count badge in the navbar
+- Messages auto-marked as read on conversation open
+- Winner notification auto-sent via chat when auction closes
+
+### ❤️ Wishlist (`/wishlist`)
+- Add / remove products from favourites with one click
+- Full wishlist page with AnimatePresence transitions
+
+### 🏪 User Profile (`/profile`)
+- View and manage your active listings
+- Animated trust score progress bar
+- Seller rating and total sales stats
+- Edit your own listings (`/product/edit/[id]`)
+
+### 🔐 Authentication
+- JWT-based auth (access + refresh tokens stored in cookies)
+- Register / Login with email **or** username
+- Route protection via Next.js middleware
+- Homepage (`/`) is always public — no forced login
+- Logout always returns to the homepage (no redirect to `/login`)
+
+### 🎨 UI / UX
+- **Dark / Light mode** toggle (next-themes)
+- **Arabic (RTL) / English (LTR)** bilingual support with dictionary-based i18n
+- **Framer Motion** animations throughout: page transitions, stagger reveals, spring hovers
+- **Typewriter effect** on the hero heading with blinking cursor
+- Floating particle decorations on the hero section
+- Animated section headers on the store page
+- Count-up animations on statistics section
+
+---
 
 ## 📁 Project Structure
 
 ```
-refurbai/
+G-P-PROJECT/
 ├── app/                          # Next.js 14 App Router
-│   ├── layout.tsx               # Root layout with providers
-│   ├── page.tsx                 # Landing page
-│   ├── globals.css              # Global styles
-│   ├── dashboard/
-│   │   └── page.tsx             # Products grid with filters
+│   ├── page.tsx                 # Public landing page (Hero, Categories, Features, Stats)
+│   ├── dashboard/page.tsx       # Sectioned product store with sidebar filters
+│   ├── auctions/page.tsx        # Live auctions listing
 │   ├── product/
-│   │   └── [id]/
-│   │       └── page.tsx         # Product detail page
-│   ├── sell/
-│   │   └── page.tsx             # Multi-step listing form
-│   ├── profile/
-│   │   └── page.tsx             # User profile with stats
-│   └── login/
-│       └── page.tsx             # Login/authentication
+│   │   ├── [id]/page.tsx        # Product detail + bidding
+│   │   └── edit/[id]/page.tsx   # Edit own listing
+│   ├── sell/page.tsx            # Create new listing (with AI image classification)
+│   ├── profile/page.tsx         # User profile & listings
+│   ├── wishlist/page.tsx        # Saved products
+│   ├── messages/page.tsx        # Chat conversations
+│   ├── agent/page.tsx           # AI auto-bidder agent management
+│   ├── login/page.tsx
+│   └── register/page.tsx
+│
 ├── components/
 │   ├── layout/
-│   │   ├── navbar.tsx           # Responsive navbar
-│   │   └── footer.tsx           # Footer component
+│   │   ├── navbar.tsx           # Sticky navbar with unread badge, theme & language toggles
+│   │   └── footer.tsx
 │   ├── providers/
-│   │   ├── theme-provider.tsx   # Dark/light mode provider
-│   │   └── language-provider.tsx# i18n context provider
+│   │   ├── auth-provider.tsx    # JWT auth context (login / logout / refreshUser)
+│   │   ├── language-provider.tsx# i18n context (Arabic / English, RTL/LTR)
+│   │   └── theme-provider.tsx   # Dark/Light mode
 │   ├── sections/
-│   │   ├── hero.tsx             # Landing hero section
-│   │   └── stats.tsx            # Statistics section
+│   │   ├── hero.tsx             # Typewriter heading + floating particles
+│   │   ├── categories.tsx       # Animated category grid
+│   │   ├── features.tsx         # Feature cards with stagger animation
+│   │   └── stats.tsx            # Count-up animated statistics
 │   └── ui/
-│       ├── product-card.tsx     # Animated product card
+│       ├── product-card.tsx     # Card with relative time, wishlist button, auction badge
 │       ├── auction-timer.tsx    # Live countdown timer
-│       ├── ai-pricing.tsx       # AI analysis component
-│       └── sidebar-filters.tsx  # Advanced filters
+│       └── sidebar-filters.tsx  # Category / price / condition filters
+│
 ├── lib/
+│   ├── api.ts                   # All API calls (products, auth, auctions, chat, agent…)
+│   ├── animations.ts            # Shared Framer Motion variants
 │   ├── types.ts                 # TypeScript interfaces
 │   └── i18n/
-│       └── dictionaries.ts      # Bilingual translations
-├── tailwind.config.ts           # Tailwind configuration
-├── tsconfig.json                # TypeScript config
-└── package.json                 # Dependencies
-
+│       └── dictionaries.ts      # AR + EN translation strings
+│
+├── middleware.ts                 # Route protection + auth redirect logic
+│
+└── backend/                     # Django REST Framework API
+    ├── marketplace/
+    │   ├── models.py            # Product, Auction, Bid, Conversation, Message,
+    │   │                        # Wishlist, UserAgent, Notification, UserProfile
+    │   ├── serializers.py       # DRF serializers + agent_counter_bid logic
+    │   ├── views.py             # All API endpoints (products, auctions, chat,
+    │   │                        # wishlist, agent, notifications, stats)
+    │   └── urls.py              # URL routing
+    └── ai/
+        └── classifier.py        # YOLO-based image classifier + agent target list
 ```
 
-## 🎨 Design System
-
-### Colors
-- **Primary**: Emerald (#059669) - Sustainability and growth
-- **Gradients**: Smooth transitions from primary to complementary colors
-- **Dark Mode**: Slate-based palette for comfortable viewing
-
-### Typography
-- **Arabic**: Cairo (Google Fonts)
-- **English**: Inter (Google Fonts)
-- **Sizing**: Responsive with `text-xs` to `text-5xl`
-
-### Animations
-- **Framer Motion**: Page transitions and hover effects
-- **Custom Keyframes**: Scan animation, float effect, pulse
-- **Transitions**: Smooth cubic-bezier timing
+---
 
 ## 🛠️ Tech Stack
 
-- **Framework**: Next.js 14+ (App Router)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **Animations**: Framer Motion
-- **Icons**: Lucide React
-- **Theme**: next-themes
-- **Package Manager**: npm
+| Layer | Technology |
+|-------|-----------|
+| Frontend Framework | Next.js 14 (App Router) |
+| Language | TypeScript |
+| Styling | Tailwind CSS |
+| Animations | Framer Motion |
+| Icons | Lucide React |
+| Theme | next-themes |
+| Backend Framework | Django + Django REST Framework |
+| Auth | JWT (SimpleJWT) |
+| AI / ML | YOLO (Ultralytics) |
+| Database | SQLite (dev) |
+| Package Manager | npm / pip |
+
+---
 
 ## 📦 Installation
+
+### Frontend
 
 ```bash
 # Install dependencies
@@ -99,150 +153,93 @@ npm install
 
 # Run development server
 npm run dev
-
-# Build for production
-npm run build
-
-# Start production server
-npm start
 ```
 
-## 🌐 Environment Setup
+### Backend
 
-The app runs on `http://localhost:3000` by default.
+```bash
+cd backend
 
-## 🎯 Key Components
+# Create virtual environment
+python -m venv venv
+venv\Scripts\activate      # Windows
+# source venv/bin/activate  # macOS/Linux
 
-### 1. **Navbar**
-- Sticky navigation with logo
-- Language and theme toggles
-- Authentication state management
-- Mobile hamburger menu with animations
+# Install dependencies
+pip install -r requirements.txt
 
-### 2. **AI Pricing Analysis**
-- Scanning animation during analysis
-- Glassmorphism background effects
-- Price comparison with market average
-- Confidence score visualization
-- Smart recommendations
+# Run migrations
+python manage.py migrate
 
-### 3. **Sidebar Filters**
-- Categories, price ranges, conditions
-- Auction-only toggle
-- Mobile drawer with backdrop
-- Desktop sticky sidebar
+# Start server
+python manage.py runserver
+```
 
-### 4. **Auction Timer**
-- Real-time countdown
-- Progress bar visualization
-- Automatic formatting (days, hours, minutes)
-- Animated pulse effect
+The frontend runs on `http://localhost:3000`  
+The backend API runs on `http://localhost:8000/api`
 
-### 5. **Multi-Step Form** (Sell Page)
-- Step 1: Drag-and-drop image upload
-- Step 2: Basic product information
-- Step 3: Description and publishing
-- Progress indicator
-- Form validation
+---
 
-### 6. **Product Card**
-- Hover animations (lift effect)
-- Image lazy loading
-- Auction badge overlay
-- Quick add to cart
+## 🌐 Environment Variables
 
-### 7. **Trust Score** (Profile)
-- Animated progress bar
-- Percentage visualization
-- Color-coded (green = high trust)
+Create `.env.local` in the project root:
 
-## 🌍 Internationalization (i18n)
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8000/api
+```
 
-### Implementation
-- Dictionary-based approach in `lib/i18n/dictionaries.ts`
-- Context provider for language state
-- Automatic RTL/LTR switching
-- Fallback support
+Create `backend/.env` for the Django backend (SECRET_KEY, DEBUG, etc.)
 
-### Usage
+---
+
+## 🔌 Key API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/auth/register/` | Register new user |
+| POST | `/api/auth/login/` | Login (username or email) |
+| GET | `/api/auth/me/` | Current user profile |
+| GET/POST | `/api/products/` | List / create products |
+| GET/PATCH | `/api/products/{id}/` | Product detail / edit |
+| GET | `/api/products/my_listings/` | Owner's own listings |
+| GET | `/api/auctions/` | All auctions |
+| POST | `/api/auctions/{id}/place_bid/` | Place a bid |
+| GET/POST | `/api/conversations/` | Chat conversations |
+| POST | `/api/conversations/start_conversation/` | Start chat with seller |
+| POST | `/api/conversations/{id}/send_message/` | Send message |
+| GET | `/api/conversations/unread_count/` | Unread messages count |
+| POST | `/api/wishlist/toggle/{id}/` | Toggle wishlist |
+| GET | `/api/wishlist/ids/` | Wishlisted product IDs |
+| POST | `/api/classify-image/` | YOLO image classification |
+| GET/POST | `/api/agents/` | List / create AI agents |
+| PATCH/DELETE | `/api/agents/{id}/` | Update / delete agent |
+| GET | `/api/agent-targets/` | Available YOLO target items |
+| GET | `/api/notifications/` | User notifications |
+| POST | `/api/notifications/mark-read/` | Mark all as read |
+| GET | `/api/general-stats/` | Platform statistics |
+
+---
+
+## 🌍 Internationalization
+
+Dictionary-based i18n with full Arabic (RTL) and English (LTR) support.
+
 ```tsx
-const { dict, locale, isRtl, toggleLanguage } = useLanguage();
+const { dict, isRtl, toggleLanguage } = useLanguage();
 <p>{dict.hero.title}</p>
 ```
 
-## 🎨 Styling Best Practices
+Add new strings in `lib/i18n/dictionaries.ts` — both `ar` and `en` objects.
 
-### Tailwind Classes
-- **Spacing**: Consistent `p-4`, `gap-6`, `mb-8`
-- **Rounded**: `rounded-xl` for cards, `rounded-full` for badges
-- **Shadows**: `shadow-lg`, `shadow-xl` for depth
-- **Dark Mode**: Always use `dark:` variants
-
-### Component Structure
-```tsx
-<motion.div
-  className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700"
->
-  {/* Content */}
-</motion.div>
-```
-
-## 🚦 Development Guidelines
-
-1. **TypeScript**: Always define interfaces for props
-2. **Accessibility**: Include `aria-label` for icon buttons
-3. **Performance**: Use `next/image` for optimized images
-4. **SEO**: Metadata in `layout.tsx` and individual pages
-5. **Mobile-First**: Start with mobile breakpoints, scale up
-
-## 📱 Responsive Breakpoints
-
-```css
-sm: 640px   /* Tablets */
-md: 768px   /* Small laptops */
-lg: 1024px  /* Desktops */
-xl: 1280px  /* Large screens */
-2xl: 1536px /* Extra large */
-```
-
-## 🔧 Customization
-
-### Adding New Pages
-1. Create folder in `app/`
-2. Add `page.tsx` with default export
-3. Include Navbar and Footer
-4. Update navigation links
-
-### Adding New Components
-1. Create in appropriate folder (`ui/`, `layout/`, `sections/`)
-2. Use TypeScript interfaces
-3. Add Framer Motion where appropriate
-4. Follow naming convention (kebab-case for files)
-
-### Adding Translations
-1. Edit `lib/i18n/dictionaries.ts`
-2. Add to both `ar` and `en` objects
-3. Use in components via `useLanguage()` hook
-
-## 🎯 Future Enhancements
-
-- [ ] Real authentication with JWT/OAuth
-- [ ] Backend API integration
-- [ ] WebSocket for live auctions
-- [ ] Payment gateway integration
-- [ ] Image upload to cloud storage (S3, Cloudinary)
-- [ ] Search with Algolia/Elasticsearch
-- [ ] Push notifications
-- [ ] Chat system between buyers/sellers
-- [ ] Admin dashboard
+---
 
 ## 📄 License
 
-This project is a graduation project for Egypt University - 2024
+Graduation Project — Egypt University, 2024
 
 ## 👥 Contributors
 
-RefurbAI Team
+Abdelrhman Samir & Team
 
 ---
 

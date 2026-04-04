@@ -13,12 +13,12 @@ import random
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-from .models import Product, ProductImage, Auction, Bid, UserProfile, Conversation, Message, Wishlist
+from .models import Product, ProductImage, Auction, Bid, UserProfile, Conversation, Message, Wishlist, UserAgent, Notification
 from .serializers import (
     ProductListSerializer, ProductDetailSerializer, ProductCreateSerializer,
     AuctionSerializer, BidSerializer, UserProfileSerializer, UserSerializer,
     RegisterSerializer, ConversationListSerializer, ConversationDetailSerializer,
-    MessageSerializer
+    MessageSerializer, UserAgentSerializer, NotificationSerializer
 )
 
 
@@ -227,6 +227,20 @@ class AuctionViewSet(viewsets.ReadOnlyModelViewSet):
         auction.current_bid = amount
         auction.highest_bidder = request.user
         auction.save()
+        
+        # ── Agent Counter-Bid (Asynchronous) ────────────────
+        import threading
+        from .serializers import agent_counter_bid_async
+        try:
+            threading.Thread(
+                target=agent_counter_bid_async,
+                args=(auction.id, request.user.id),
+                daemon=True
+            ).start()
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).error(f"[Agent] Counter-bid thread error: {e}")
+        # ───────────────────────────────────────────────────
         
         return Response(BidSerializer(bid).data, status=status.HTTP_201_CREATED)
 
@@ -465,4 +479,64 @@ def classify_image_view(request):
         return Response(result)
     finally:
         os.unlink(tmp_path)
+
+
+# ──────────────────────────────────────────────────────────────
+# AI AGENT ENDPOINTS
+# ──────────────────────────────────────────────────────────────
+
+class UserAgentViewSet(viewsets.ModelViewSet):
+    """
+    CRUD ViewSet for AI Auto-Bidder agents.
+    Users can create, view, update, and delete their own agents.
+    """
+    serializer_class = UserAgentSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return UserAgent.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_agent_targets(request):
+    """
+    Return all available YOLO target items for the agent dropdown.
+    Each item has: id, label (Arabic + category), label_ar, category.
+    """
+    from ai.classifier import get_available_targets
+    targets = get_available_targets()
+    return Response(targets)
+
+
+# ──────────────────────────────────────────────────────────────
+# NOTIFICATIONS ENDPOINTS
+# ──────────────────────────────────────────────────────────────
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def notifications_list(request):
+    """Get all notifications for current user"""
+    notifications = Notification.objects.filter(user=request.user)[:50]
+    serializer = NotificationSerializer(notifications, many=True)
+    return Response(serializer.data)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def notifications_mark_read(request):
+    """Mark all notifications as read for the current user"""
+    Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
+    return Response({'status': 'ok'})
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def notifications_unread_count(request):
+    """Get unread notification count"""
+    count = Notification.objects.filter(user=request.user, is_read=False).count()
+    return Response({'unread_count': count})
 

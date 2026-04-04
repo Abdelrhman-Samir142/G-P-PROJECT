@@ -49,15 +49,8 @@ async function apiFetch<T>(
 
     if (!response.ok) {
         if (response.status === 401) {
-            // Always clear tokens on 401 (invalid session)
+            // Clear invalid tokens silently — no redirect needed
             clearAuthTokens();
-
-            // Only redirect if NOT on login page and NOT checking auth status silently
-            if (!endpoint.includes('login') && !endpoint.includes('/auth/me/') && !endpoint.includes('/profiles/me/')) {
-                if (typeof window !== 'undefined') {
-                    window.location.href = '/login';
-                }
-            }
         }
         const errorData = await response.json().catch(() => ({ detail: 'An error occurred' }));
 
@@ -351,6 +344,59 @@ export const classifyAPI = {
         }
 
         return response.json();
+    },
+};
+
+// AI Agent API
+export const agentAPI = {
+    async getTargets() {
+        return apiFetch<{ id: string; label: string; label_ar: string; category: string }[]>(
+            '/agent-targets/'
+        );
+    },
+
+    async list() {
+        const data = await apiFetch<any>('/agents/');
+        // Handle paginated (DRF) or plain array response
+        return Array.isArray(data) ? data : (data.results || []);
+    },
+
+    async create(data: { target_item: string; max_budget: number; requirements_prompt?: string }) {
+        return apiFetch<any>('/agents/', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+    },
+
+    async update(id: number, data: Partial<{ target_item: string; max_budget: number; is_active: boolean; requirements_prompt: string }>) {
+        return apiFetch<any>(`/agents/${id}/`, {
+            method: 'PATCH',
+            body: JSON.stringify(data),
+        });
+    },
+
+    async delete(id: number) {
+        return apiFetch<void>(`/agents/${id}/`, {
+            method: 'DELETE',
+        });
+    },
+};
+
+// Notifications API
+export const notificationsAPI = {
+    async list() {
+        const data = await apiFetch<any>('/notifications/');
+        return Array.isArray(data) ? data : (data.results || []);
+    },
+
+    async markAllRead() {
+        return apiFetch<{ status: string }>('/notifications/mark-read/', {
+            method: 'POST',
+        });
+    },
+
+    async unreadCount() {
+        return apiFetch<{ unread_count: number }>('/notifications/unread-count/');
     },
 };
 

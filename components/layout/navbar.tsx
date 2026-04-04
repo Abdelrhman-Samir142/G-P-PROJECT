@@ -5,64 +5,51 @@ import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import { useLanguage } from '@/components/providers/language-provider';
 import {
-    Moon, Sun, Languages, User, Menu, X, LogOut, MessageCircle
+    Moon, Sun, Languages, User, Menu, X, LogOut, MessageCircle, Bot
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { authAPI, profilesAPI, chatAPI } from '@/lib/api';
 import { useRouter, usePathname } from 'next/navigation';
 
+import { useAuth } from '@/components/providers/auth-provider';
+
 export function Navbar() {
     const { theme, setTheme } = useTheme();
     const { dict, toggleLanguage, isRtl } = useLanguage();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    const [user, setUser] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
+    const { user, loading, logout } = useAuth();
     const [unreadCount, setUnreadCount] = useState(0);
     const router = useRouter();
     const pathname = usePathname();
 
-    // Fetch current user and profile
+    // Determine current user display info
+    const fullUserName = user?.user?.first_name 
+        ? `${user.user.first_name} ${user.user.last_name || ''}`.trim()
+        : user?.user?.username?.split('@')[0] || '';
+    
+    const avatarUrl = user?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.user?.username || 'default'}`;
+
+    // Fetch unread count periodically
     useEffect(() => {
-        const fetchUser = async () => {
-            try {
-                // Try to get full profile first to show avatar
-                try {
-                    const profileData = await profilesAPI.getMe();
-                    setUser({
-                        ...profileData.user,
-                        profile: profileData
-                    });
-                } catch (e) {
-                    // Fallback to basic user info if profile fetch fails (e.g. incomplete profile)
-                    const userData = await authAPI.getCurrentUser();
-                    setUser(userData);
-                }
-            } catch (err) {
-                // User not logged in
-                setUser(null);
-            } finally {
-                setLoading(false);
-            }
-        };
+        if (!user) {
+            setUnreadCount(0);
+            return;
+        }
 
-        fetchUser();
-
-        // Fetch unread count
         const fetchUnread = async () => {
             try {
                 const data = await chatAPI.getUnreadCount();
                 setUnreadCount(data.unread_count);
-            } catch (e) { /* not logged in */ }
+            } catch (e) { /* ignore errors */ }
         };
+
         fetchUnread();
-        const interval = setInterval(fetchUnread, 30000);
+        const interval = setInterval(fetchUnread, 60000); // Poll every 60 seconds
         return () => clearInterval(interval);
-    }, []);
+    }, [user]);
 
     const handleLogout = () => {
-        authAPI.logout();
-        setUser(null);
-        router.push('/');
+        logout();
     };
 
     const isLoggedIn = !!user;
@@ -115,6 +102,15 @@ export function Navbar() {
                                 )}
                             </Link>
                         )}
+                        {isLoggedIn && (
+                            <Link
+                                href="/agent"
+                                className={`text-sm font-semibold transition-colors relative pb-1 flex items-center gap-1 ${pathname === '/agent' ? 'text-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:rounded-full' : 'hover:text-primary'}`}
+                            >
+                                <Bot size={16} />
+                                الوكيل الذكي
+                            </Link>
+                        )}
                     </div>
 
                     {/* Actions */}
@@ -136,8 +132,6 @@ export function Navbar() {
                         >
                             {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
                         </button>
-
-
 
                         {/* Auth Buttons / User Menu */}
                         {!loading && (
@@ -161,15 +155,15 @@ export function Navbar() {
                                             <Link href="/profile">
                                                 <div className="w-9 h-9 rounded-full bg-slate-200 dark:bg-slate-700 border-2 border-primary overflow-hidden hover:ring-2 hover:ring-primary transition-all cursor-pointer">
                                                     <img
-                                                        src={user.profile?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`}
-                                                        alt={user.username}
+                                                        src={avatarUrl}
+                                                        alt={fullUserName}
                                                         className="w-full h-full object-cover"
                                                     />
                                                 </div>
                                             </Link>
                                             <div className="flex flex-col">
                                                 <span className="text-sm font-bold">
-                                                    {user.first_name ? `${user.first_name} ${user.last_name || ''}` : user.username.split('@')[0]}
+                                                    {fullUserName}
                                                 </span>
                                             </div>
                                         </div>
@@ -244,6 +238,16 @@ export function Navbar() {
                                         )}
                                     </Link>
                                 )}
+                                {isLoggedIn && (
+                                    <Link
+                                        href="/agent"
+                                        className={`px-4 py-2 rounded-lg font-semibold flex items-center gap-2 ${pathname === '/agent' ? 'bg-primary/10 text-primary border-r-4 border-primary' : 'hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                                        onClick={() => setMobileMenuOpen(false)}
+                                    >
+                                        <Bot size={18} />
+                                        الوكيل الذكي
+                                    </Link>
+                                )}
                                 {!loading && (
                                     <>
                                         {!isLoggedIn ? (
@@ -269,12 +273,12 @@ export function Navbar() {
                                                 <div className="px-4 py-2 flex items-center gap-2">
                                                     <div className="w-9 h-9 rounded-full bg-slate-200 dark:bg-slate-700 border-2 border-primary overflow-hidden">
                                                         <img
-                                                            src={user.profile?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`}
-                                                            alt={user.username}
+                                                            src={avatarUrl}
+                                                            alt={fullUserName}
                                                             className="w-full h-full object-cover"
                                                         />
                                                     </div>
-                                                    <span className="font-bold">{user.username}</span>
+                                                    <span className="font-bold">{fullUserName}</span>
                                                 </div>
                                                 <button
                                                     onClick={() => {

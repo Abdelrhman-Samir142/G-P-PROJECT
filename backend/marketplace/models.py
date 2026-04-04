@@ -66,6 +66,7 @@ class Product(models.Model):
     location = models.CharField(max_length=200)
     phone_number = models.CharField(max_length=20, blank=True, default='')
     is_auction = models.BooleanField(default=False)
+    detected_item = models.CharField(max_length=100, blank=True, default='', help_text='YOLO detected class name for agent matching')
     auction_end_time = models.DateTimeField(null=True, blank=True)
     views_count = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -185,3 +186,56 @@ class Wishlist(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.product.title}"
+
+
+class UserAgent(models.Model):
+    """
+    AI Auto-Bidder agent configuration.
+    Each user can set up agents that watch for specific YOLO-detected items
+    and automatically bid on auctions matching that item.
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='agents')
+    target_item = models.CharField(
+        max_length=50,
+        help_text="Raw YOLO class name to watch for (e.g., 'washing_machine', 'scrap_metal')"
+    )
+    max_budget = models.DecimalField(
+        max_digits=10, decimal_places=2,
+        validators=[MinValueValidator(1)],
+        help_text="Maximum amount the agent is allowed to bid"
+    )
+    requirements_prompt = models.TextField(
+        blank=True, default='',
+        help_text="User's natural language requirements (e.g., 'Toshiba 10kg good condition')"
+    )
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'user_agents'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['target_item', 'is_active']),
+        ]
+
+    def __str__(self):
+        status = '✅' if self.is_active else '❌'
+        return f"{status} {self.user.username} → {self.target_item} (max {self.max_budget})"
+
+
+class Notification(models.Model):
+    """Notification for agent actions and other system events"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+    title = models.CharField(max_length=200)
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    related_product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'notifications'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.username}: {self.title}"

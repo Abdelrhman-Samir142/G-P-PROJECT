@@ -7,6 +7,7 @@ from .views import (
     AuctionViewSet,
     UserProfileViewSet,
     ConversationViewSet,
+    UserAgentViewSet,
     register_view,
     current_user_view,
     get_general_stats,
@@ -16,6 +17,10 @@ from .views import (
     wishlist_check,
     wishlist_ids,
     classify_image_view,
+    get_agent_targets,
+    notifications_list,
+    notifications_mark_read,
+    notifications_unread_count,
 )
 
 router = DefaultRouter()
@@ -23,6 +28,7 @@ router.register(r'products', ProductViewSet, basename='product')
 router.register(r'auctions', AuctionViewSet, basename='auction')
 router.register(r'profiles', UserProfileViewSet, basename='profile')
 router.register(r'conversations', ConversationViewSet, basename='conversation')
+router.register(r'agents', UserAgentViewSet, basename='agent')
 
 urlpatterns = [
     # Authentication endpoints
@@ -41,7 +47,16 @@ urlpatterns = [
     # AI Classification
     path('classify-image/', classify_image_view, name='classify-image'),
     
+    # AI Agent
+    path('agent-targets/', get_agent_targets, name='agent-targets'),
+    
+    # Notifications
+    path('notifications/', notifications_list, name='notifications-list'),
+    path('notifications/mark-read/', notifications_mark_read, name='notifications-mark-read'),
+    path('notifications/unread-count/', notifications_unread_count, name='notifications-unread-count'),
+    
     # Router URLs
     path('', include(router.urls)),
 ]
+
 

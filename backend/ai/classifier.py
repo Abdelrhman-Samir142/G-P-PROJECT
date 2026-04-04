@@ -55,6 +55,46 @@ ARABIC_TO_CATEGORY_ID = {
     'أخرى': 'other',
 }
 
+# Human-readable labels for YOLO classes (for the agent target dropdown)
+YOLO_CLASS_LABELS = {
+    'bed': 'سرير', 'chair': 'كرسي', 'cabinet': 'خزانة',
+    'cupboard': 'دولاب', 'curtain': 'ستارة', 'lamp': 'لمبة / أباجورة',
+    'mirror': 'مرآة', 'Dressing Table': 'تسريحة', 'Food trip': 'سفرة',
+    'sofa': 'كنبة', 'table': 'طاولة', 'wardrobe': 'دولاب ملابس',
+    'computer': 'كمبيوتر', 'laptop': 'لابتوب',
+    'headphone': 'سماعات', 'ac_unit': 'تكييف',
+    'blender': 'خلاط', 'fan': 'مروحة',
+    'heater': 'دفاية', 'microwave': 'ميكروويف',
+    'freighter': 'شاحنة صغيرة', 'iron': 'مكواة',
+    'tv': 'تلفزيون', 'oven': 'فرن', 'refrigerator': 'ثلاجة',
+    'washing_machine': 'غسالة',
+    'korda': 'خردة', 'copper_wire': 'سلك نحاس',
+    'aluminum': 'ألومنيوم', 'equipment': 'معدات',
+    'scrap_metal': 'خردة معادن', 'plastic_waste': 'بلاستيك مستعمل',
+    'motor_scrap': 'موتور خردة',
+    'car': 'سيارة', 'truck': 'نقل', 'bus': 'أتوبيس', 'motorcycle': 'موتوسيكل',
+    'building': 'مبنى', 'house': 'منزل',
+    'book': 'كتاب',
+}
+
+
+def get_available_targets():
+    """
+    Return a list of all YOLO classes the agent can target,
+    grouped by their Arabic category, for the frontend dropdown.
+    """
+    targets = []
+    for class_name, arabic_category in CATEGORY_MAP.items():
+        label = YOLO_CLASS_LABELS.get(class_name, class_name)
+        targets.append({
+            'id': class_name,
+            'label': f"{label} ({arabic_category})",
+            'label_ar': label,
+            'category': arabic_category,
+        })
+    return targets
+
+
 # Lazy-loaded model instance
 _model = None
 

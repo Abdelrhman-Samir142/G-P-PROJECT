@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import UserProfile, Product, ProductImage, Auction, Bid, Conversation, Message
+from .models import UserProfile, Product, ProductImage, Auction, Bid, Conversation, Message, UserAgent, Notification
 
 
 @admin.register(UserProfile)
@@ -65,3 +65,19 @@ class MessageAdmin(admin.ModelAdmin):
     def short_content(self, obj):
         return obj.content[:50] + '...' if len(obj.content) > 50 else obj.content
     short_content.short_description = 'Content'
+
+
+@admin.register(UserAgent)
+class UserAgentAdmin(admin.ModelAdmin):
+    list_display = ['user', 'target_item', 'max_budget', 'is_active', 'created_at']
+    list_filter = ['is_active', 'target_item']
+    search_fields = ['user__username', 'target_item']
+    readonly_fields = ['created_at', 'updated_at']
+
+
+@admin.register(Notification)
+class NotificationAdmin(admin.ModelAdmin):
+    list_display = ['user', 'title', 'is_read', 'related_product', 'created_at']
+    list_filter = ['is_read', 'created_at']
+    search_fields = ['user__username', 'title', 'message']
+    readonly_fields = ['created_at']

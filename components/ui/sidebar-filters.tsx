@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { Filter, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -29,7 +29,13 @@ const conditions = [
 ];
 
 interface SidebarFiltersProps {
-    onFilterChange?: (filters: {
+    currentFilters: {
+        category?: string;
+        min_price?: number;
+        max_price?: number;
+        condition?: string;
+    };
+    onFilterChange: (filters: {
         category?: string;
         min_price?: number;
         max_price?: number;
@@ -37,55 +43,44 @@ interface SidebarFiltersProps {
     }) => void;
 }
 
-export function SidebarFilters({ onFilterChange }: SidebarFiltersProps) {
+export function SidebarFilters({ currentFilters, onFilterChange }: SidebarFiltersProps) {
     const [isOpen, setIsOpen] = useState(false);
-    const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-    const [selectedPriceRange, setSelectedPriceRange] = useState<string | null>(null);
-    const [selectedConditions, setSelectedConditions] = useState<string[]>([]);
-    const onFilterChangeRef = useRef(onFilterChange);
-    onFilterChangeRef.current = onFilterChange;
 
-    useEffect(() => {
-        const cb = onFilterChangeRef.current;
-        if (!cb) return;
-
-        const priceRange = priceRanges.find(r => r.id === selectedPriceRange);
-        const filters: {
-            category?: string;
-            min_price?: number;
-            max_price?: number;
-            condition?: string;
-        } = {};
-
-        if (selectedCategories.length > 0) filters.category = selectedCategories[0];
-        if (priceRange) {
-            filters.min_price = priceRange.min;
-            if (priceRange.max !== Infinity) filters.max_price = priceRange.max;
-        }
-        if (selectedConditions.length > 0) filters.condition = selectedConditions[0];
-
-        cb(filters);
-    }, [selectedCategories, selectedPriceRange, selectedConditions]);
+    // Derived state from props
+    const selectedCategory = currentFilters?.category || null;
+    const selectedCondition = currentFilters?.condition || null;
+    const selectedPriceRangeId = priceRanges.find(
+        (r) => r.min === currentFilters?.min_price && (r.max === Infinity ? !currentFilters?.max_price : r.max === currentFilters?.max_price)
+    )?.id || null;
 
     const toggleCategory = (id: string) => {
-        setSelectedCategories((prev) =>
-            prev.includes(id) ? prev.filter((c) => c !== id) : [id]
-        );
+        onFilterChange({
+            ...currentFilters,
+            category: selectedCategory === id ? undefined : id,
+        });
     };
 
     const toggleCondition = (id: string) => {
-        setSelectedConditions((prev) =>
-            prev.includes(id) ? prev.filter((c) => c !== id) : [id]
-        );
+        onFilterChange({
+            ...currentFilters,
+            condition: selectedCondition === id ? undefined : id,
+        });
+    };
+
+    const togglePriceRange = (id: string | null) => {
+        const range = priceRanges.find((r) => r.id === id);
+        onFilterChange({
+            ...currentFilters,
+            min_price: range ? range.min : undefined,
+            max_price: range && range.max !== Infinity ? range.max : undefined,
+        });
     };
 
     const clearFilters = () => {
-        setSelectedCategories([]);
-        setSelectedPriceRange(null);
-        setSelectedConditions([]);
+        onFilterChange({});
     };
 
-    const hasActiveFilters = selectedCategories.length > 0 || selectedPriceRange !== null || selectedConditions.length > 0;
+    const hasActiveFilters = !!(selectedCategory || selectedPriceRangeId || selectedCondition);
 
     const FilterContent = () => (
         <div className="space-y-6">
@@ -105,6 +100,53 @@ export function SidebarFilters({ onFilterChange }: SidebarFiltersProps) {
                 )}
             </div>
 
+            {/* Active Filters Tags */}
+            {hasActiveFilters && (
+                <div className="flex flex-wrap gap-2 pb-2">
+                    <AnimatePresence>
+                        {selectedCategory && (
+                            <motion.span
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.8 }}
+                                className="inline-flex items-center gap-1.5 px-3 py-1 bg-primary/10 text-primary text-xs font-bold rounded-full"
+                            >
+                                {categories.find((c) => c.id === selectedCategory)?.label}
+                                <button onClick={() => toggleCategory(selectedCategory)} className="hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full p-0.5 transition-colors">
+                                    <X size={14} />
+                                </button>
+                            </motion.span>
+                        )}
+                        {selectedPriceRangeId && (
+                            <motion.span
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.8 }}
+                                className="inline-flex items-center gap-1.5 px-3 py-1 bg-primary/10 text-primary text-xs font-bold rounded-full"
+                            >
+                                {priceRanges.find((p) => p.id === selectedPriceRangeId)?.label}
+                                <button onClick={() => togglePriceRange(null)} className="hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full p-0.5 transition-colors">
+                                    <X size={14} />
+                                </button>
+                            </motion.span>
+                        )}
+                        {selectedCondition && (
+                            <motion.span
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.8 }}
+                                className="inline-flex items-center gap-1.5 px-3 py-1 bg-primary/10 text-primary text-xs font-bold rounded-full"
+                            >
+                                {conditions.find((c) => c.id === selectedCondition)?.label}
+                                <button onClick={() => toggleCondition(selectedCondition)} className="hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full p-0.5 transition-colors">
+                                    <X size={14} />
+                                </button>
+                            </motion.span>
+                        )}
+                    </AnimatePresence>
+                </div>
+            )}
+
             {/* Categories */}
             <div>
                 <h4 className="font-bold text-sm mb-3 text-slate-700 dark:text-slate-300">التصنيفات</h4>
@@ -112,19 +154,19 @@ export function SidebarFilters({ onFilterChange }: SidebarFiltersProps) {
                     {categories.map((category) => (
                         <label
                             key={category.id}
-                            className={`flex items-center justify-between p-2 rounded-lg cursor-pointer group transition-colors ${selectedCategories.includes(category.id)
+                            className={`flex items-center justify-between p-2 rounded-lg cursor-pointer group transition-colors ${selectedCategory === category.id
                                 ? 'bg-primary/10 border border-primary/30'
-                                : 'hover:bg-slate-50 dark:hover:bg-slate-800'
+                                : 'hover:bg-slate-50 dark:hover:bg-slate-800 border border-transparent'
                                 }`}
                         >
                             <div className="flex items-center gap-2">
                                 <input
                                     type="checkbox"
-                                    checked={selectedCategories.includes(category.id)}
+                                    checked={selectedCategory === category.id}
                                     onChange={() => toggleCategory(category.id)}
                                     className="w-4 h-4 text-primary rounded focus:ring-primary"
                                 />
-                                <span className={`text-sm font-medium transition-colors ${selectedCategories.includes(category.id) ? 'text-primary font-bold' : 'group-hover:text-primary'
+                                <span className={`text-sm font-medium transition-colors ${selectedCategory === category.id ? 'text-primary font-bold' : 'group-hover:text-primary'
                                     }`}>
                                     {category.label}
                                 </span>
@@ -141,23 +183,23 @@ export function SidebarFilters({ onFilterChange }: SidebarFiltersProps) {
                     {priceRanges.map((range) => (
                         <label
                             key={range.id}
-                            className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer group transition-colors ${selectedPriceRange === range.id
+                            className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer group transition-colors ${selectedPriceRangeId === range.id
                                 ? 'bg-primary/10 border border-primary/30'
-                                : 'hover:bg-slate-50 dark:hover:bg-slate-800'
+                                : 'hover:bg-slate-50 dark:hover:bg-slate-800 border border-transparent'
                                 }`}
                             onClick={(e) => {
                                 e.preventDefault();
-                                setSelectedPriceRange(prev => prev === range.id ? null : range.id);
+                                togglePriceRange(selectedPriceRangeId === range.id ? null : range.id);
                             }}
                         >
                             <input
                                 type="radio"
                                 name="price-range"
-                                checked={selectedPriceRange === range.id}
+                                checked={selectedPriceRangeId === range.id}
                                 readOnly
                                 className="w-4 h-4 text-primary focus:ring-primary"
                             />
-                            <span className={`text-sm font-medium transition-colors ${selectedPriceRange === range.id ? 'text-primary font-bold' : 'group-hover:text-primary'
+                            <span className={`text-sm font-medium transition-colors ${selectedPriceRangeId === range.id ? 'text-primary font-bold' : 'group-hover:text-primary'
                                 }`}>
                                 {range.label}
                             </span>
@@ -173,15 +215,19 @@ export function SidebarFilters({ onFilterChange }: SidebarFiltersProps) {
                     {conditions.map((condition) => (
                         <label
                             key={condition.id}
-                            className="flex items-center gap-2 p-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg cursor-pointer group"
+                            className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer group transition-colors ${selectedCondition === condition.id
+                                ? 'bg-primary/10 border border-primary/30'
+                                : 'hover:bg-slate-50 dark:hover:bg-slate-800 border border-transparent'
+                                }`}
                         >
                             <input
                                 type="checkbox"
-                                checked={selectedConditions.includes(condition.id)}
+                                checked={selectedCondition === condition.id}
                                 onChange={() => toggleCondition(condition.id)}
                                 className="w-4 h-4 text-primary rounded focus:ring-primary"
                             />
-                            <span className="text-sm font-medium group-hover:text-primary transition-colors">
+                            <span className={`text-sm font-medium transition-colors ${selectedCondition === condition.id ? 'text-primary font-bold' : 'group-hover:text-primary'
+                                }`}>
                                 {condition.label}
                             </span>
                         </label>
@@ -205,7 +251,7 @@ export function SidebarFilters({ onFilterChange }: SidebarFiltersProps) {
             </div>
 
             {/* Desktop Sidebar */}
-            <div className="hidden lg:block bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6">
+            <div className="hidden lg:block w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6">
                 <FilterContent />
             </div>
 
