@@ -30,6 +30,8 @@ export const metadata: Metadata = {
   },
 };
 
+import { QueryProvider } from "@/components/providers/query-provider";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -40,18 +42,20 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${cairo.variable} font-sans antialiased`}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <AuthProvider>
-            <LanguageProvider>
-              {children}
-            </LanguageProvider>
-          </AuthProvider>
-        </ThemeProvider>
+        <QueryProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="light"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <AuthProvider>
+              <LanguageProvider>
+                {children}
+              </LanguageProvider>
+            </AuthProvider>
+          </ThemeProvider>
+        </QueryProvider>
       </body>
     </html>
   );

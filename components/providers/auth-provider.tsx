@@ -40,7 +40,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
             const currentUser = await authAPI.getCurrentUser();
             setUser(currentUser);
-        } catch (error) {
+        } catch (error: unknown) {
+            const err = error as { response?: { status?: number } };
+            if (err.response?.status === 401) {
+                // User is not authenticated, clear any stale tokens
+                authAPI.logout();
+            }
             setUser(null);
         } finally {
             setLoading(false);

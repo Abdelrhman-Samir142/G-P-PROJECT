@@ -10,8 +10,8 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { authAPI, profilesAPI, chatAPI } from '@/lib/api';
 import { useRouter, usePathname } from 'next/navigation';
-
 import { useAuth } from '@/components/providers/auth-provider';
+import { NotificationDropdown } from '@/components/ui/notification-dropdown';
 
 export function Navbar() {
     const { theme, setTheme } = useTheme();
@@ -122,6 +122,8 @@ export function Navbar() {
 
                     {/* Actions */}
                     <div className="flex items-center gap-2">
+                        {isLoggedIn && <NotificationDropdown />}
+
                         {/* Language Toggle */}
                         <button
                             onClick={toggleLanguage}

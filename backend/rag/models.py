@@ -18,7 +18,7 @@ class ProductEmbedding(models.Model):
     The vector is stored as a JSON array of floats.
     """
     product = models.OneToOneField(
-        'marketplace.Product',
+        'catalog.Product',
         on_delete=models.CASCADE,
         related_name='embedding',
         primary_key=True,

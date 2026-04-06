@@ -207,54 +207,71 @@ export default function DashboardPage() {
             <main className="pt-24 pb-16 min-h-screen px-4 sm:px-6 lg:px-8">
                 <div className="max-w-7xl mx-auto">
 
-                    {/* ── Page Header ── */}
+                    {/* ── Page Header Hero ── */}
                     <motion.div
                         variants={staggerContainer}
                         initial="hidden"
                         animate="visible"
-                        className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-10"
+                        className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary-50 via-white to-primary-50/30 dark:from-slate-800 dark:via-slate-800/80 dark:to-slate-900 border border-primary-100/50 dark:border-slate-700/50 p-8 md:p-12 mb-10 shadow-sm"
                     >
-                        <motion.div variants={staggerItem}>
-                            <h2 className="text-2xl md:text-3xl font-black">المتجر</h2>
-                            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
-                                اكتشف أحدث العروض والمزادات
-                            </p>
-                        </motion.div>
+                        {/* Background Deco */}
+                        <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-primary/20 blur-3xl rounded-full pointer-events-none" />
+                        <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-40 h-40 bg-blue-500/10 blur-3xl rounded-full pointer-events-none" />
 
-                        <motion.div variants={staggerItem} className="flex gap-2 items-center">
-                            {/* Search */}
-                            <div className="flex gap-2 max-w-sm w-full">
-                                <input
-                                    type="text"
-                                    placeholder={dict.dashboard.searchPlaceholder}
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    onKeyDown={(e) => e.key === 'Enter' && fetchProducts()}
-                                    className="flex-1 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 bg-white dark:bg-slate-800 transition-all"
-                                />
-                                <motion.button
-                                    onClick={fetchProducts}
-                                    whileHover={{ scale: 1.08 }}
-                                    whileTap={{ scale: 0.93 }}
-                                    transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-                                    className="bg-primary hover:bg-primary-700 text-white p-3 rounded-xl"
-                                >
-                                    <Search size={20} />
-                                </motion.button>
-                            </div>
+                        <div className="relative z-10 flex flex-col md:flex-row md:justify-between md:items-end gap-6">
+                            <motion.div variants={staggerItem} className="max-w-xl">
+                                <span className="inline-block py-1 px-3 rounded-full bg-primary/10 text-primary font-bold text-xs mb-3 border border-primary/20">
+                                    مرحباً بك مجدداً 👋
+                                </span>
+                                <h2 className="text-3xl md:text-5xl font-black tracking-tight text-slate-900 dark:text-white leading-tight">
+                                    اكتشف <span className="text-primary relative inline-block">
+                                        أفضل العروض
+                                        <svg className="absolute w-full h-3 -bottom-1 left-0 text-primary/30" viewBox="0 0 100 10" preserveAspectRatio="none"><path d="M0 5 Q 50 10 100 0" stroke="currentColor" strokeWidth="4" fill="transparent"/></svg>
+                                    </span>
+                                </h2>
+                                <p className="text-slate-500 dark:text-slate-400 text-base md:text-lg mt-3 leading-relaxed">
+                                    سوقك الذكي للمستعمل والخردة مدعوم بالذكاء الاصطناعي لتجربة أكثر أماناً وسرعة.
+                                </p>
+                            </motion.div>
 
-                            <Link href="/sell">
-                                <motion.button
-                                    whileHover={{ scale: 1.05, boxShadow: '0 4px 16px rgba(22,163,74,0.3)' }}
-                                    whileTap={{ scale: 0.96 }}
-                                    transition={{ type: 'spring', stiffness: 380, damping: 20 }}
-                                    className="bg-primary text-white px-4 py-3 rounded-xl font-bold text-sm shadow-sm flex items-center gap-2 whitespace-nowrap"
-                                >
-                                    <Plus size={18} />
-                                    أضف إعلان
-                                </motion.button>
-                            </Link>
-                        </motion.div>
+                            <motion.div variants={staggerItem} className="flex flex-col gap-3 w-full md:w-auto">
+                                {/* Search */}
+                                <div className="flex gap-2 w-full">
+                                    <div className="relative flex-1 group">
+                                        <div className="absolute inset-y-0 right-0 pl-3 flex items-center pr-4 pointer-events-none text-slate-400 group-focus-within:text-primary transition-colors">
+                                            <Search size={18} />
+                                        </div>
+                                        <input
+                                            type="text"
+                                            placeholder={dict.dashboard.searchPlaceholder}
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                            onKeyDown={(e) => e.key === 'Enter' && fetchProducts()}
+                                            className="w-full pl-4 pr-12 py-3.5 border-0 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md rounded-xl text-sm outline-none ring-1 ring-slate-200 dark:ring-slate-700/50 focus:ring-2 focus:ring-primary/50 shadow-sm transition-all"
+                                        />
+                                    </div>
+                                    <motion.button
+                                        onClick={fetchProducts}
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        className="bg-primary hover:bg-primary-600 text-white px-5 rounded-xl shadow-md shadow-primary/20 font-bold transition-all"
+                                    >
+                                        بحث
+                                    </motion.button>
+                                </div>
+
+                                <Link href="/sell" className="w-full">
+                                    <motion.button
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        className="w-full bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-primary dark:text-white border border-slate-200 dark:border-slate-700 px-4 py-3.5 rounded-xl font-bold text-sm shadow-sm flex items-center justify-center gap-2 transition-all"
+                                    >
+                                        <Plus size={18} className="text-primary" />
+                                        أضف إعلان جديد
+                                    </motion.button>
+                                </Link>
+                            </motion.div>
+                        </div>
                     </motion.div>
 
                     {/* ── Loading ── */}

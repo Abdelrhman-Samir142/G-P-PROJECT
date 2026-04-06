@@ -10,22 +10,22 @@ designed to capture maximum semantic meaning for Egyptian marketplace items.
 
 import os
 import logging
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
 logger = logging.getLogger(__name__)
 
-EMBEDDING_MODEL = "models/gemini-embedding-001"
+EMBEDDING_MODEL = "text-embedding-004"
 EMBEDDING_DIM = 768
 
-_configured = False
+_client = None
 
-
-def _configure():
-    global _configured
-    if not _configured:
+def _get_client():
+    global _client
+    if _client is None:
         api_key = os.environ.get("GEMINI_API_KEY", "")
-        genai.configure(api_key=api_key)
-        _configured = True
+        _client = genai.Client(api_key=api_key)
+    return _client
 
 
 def build_embedding_text(product) -> str:
@@ -75,13 +75,13 @@ def generate_embedding(text: str) -> list[float]:
     Call Gemini embedding API and return the vector.
     """
     try:
-        _configure()
-        result = genai.embed_content(
+        client = _get_client()
+        response = client.models.embed_content(
             model=EMBEDDING_MODEL,
-            content=text,
-            task_type="retrieval_document",
+            contents=text,
+            config=types.EmbedContentConfig(task_type="RETRIEVAL_DOCUMENT"),
         )
-        return result['embedding']
+        return response.embeddings[0].values
     except Exception as e:
         logger.error(f"[RAG] Embedding generation failed: {e}")
         raise
@@ -92,13 +92,13 @@ def generate_query_embedding(text: str) -> list[float]:
     Generate embedding specifically for queries (uses retrieval_query task type).
     """
     try:
-        _configure()
-        result = genai.embed_content(
+        client = _get_client()
+        response = client.models.embed_content(
             model=EMBEDDING_MODEL,
-            content=text,
-            task_type="retrieval_query",
+            contents=text,
+            config=types.EmbedContentConfig(task_type="RETRIEVAL_QUERY"),
         )
-        return result['embedding']
+        return response.embeddings[0].values
     except Exception as e:
         logger.error(f"[RAG] Query embedding failed: {e}")
         raise

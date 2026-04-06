@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 def _embed_in_background(product_id):
     """Run embedding in a background thread."""
     try:
-        from marketplace.models import Product
+        from catalog.models import Product
         from rag.embeddings import embed_product
         product = Product.objects.get(id=product_id)
         embed_product(product)
@@ -26,13 +26,12 @@ def _embed_in_background(product_id):
         connection.close()
 
 
-@receiver(post_save, sender='marketplace.Product')
+@receiver(post_save, sender='catalog.Product')
 def auto_embed_product(sender, instance, **kwargs):
     """
     Whenever a Product is saved, queue an embedding generation.
     Runs in a daemon thread so it doesn't block the HTTP response.
     """
-    # Only embed active products
     if instance.status != 'active':
         return
 

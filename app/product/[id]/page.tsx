@@ -8,8 +8,7 @@ import { AuctionTimer } from '@/components/ui/auction-timer';
 import { useLanguage } from '@/components/providers/language-provider';
 import { ArrowRight, ShoppingCart, MapPin, Star, Loader2, Edit, Trash2, MessageCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useState, useEffect } from 'react';
-import { productsAPI, auctionsAPI, authAPI, chatAPI } from '@/lib/api';
+import { useProductDetails } from '@/features/products/hooks/useProductDetails';
 
 const categoryLabels: Record<string, string> = {
     scrap_metals: 'خردة ومعادن',
@@ -32,85 +31,13 @@ export default function ProductPage() {
     const params = useParams();
     const router = useRouter();
     const { dict, isRtl } = useLanguage();
-    const [selectedImage, setSelectedImage] = useState(0);
-    const [product, setProduct] = useState<any>(null);
-    const [user, setUser] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [bidAmount, setBidAmount] = useState('');
-    const [bidding, setBidding] = useState(false);
-    const [bidError, setBidError] = useState<string | null>(null);
-    const [bidSuccess, setBidSuccess] = useState(false);
-    const [deleting, setDeleting] = useState(false);
-    const [chatLoading, setChatLoading] = useState(false);
 
-    // Fetch product and user details
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                setLoading(true);
-                setError(null);
-
-                // Fetch product and user in parallel
-                const [productData, userData] = await Promise.all([
-                    productsAPI.get(params.id as string),
-                    authAPI.getCurrentUser().catch(() => null) // Allow 401 (guest)
-                ]);
-
-                setProduct(productData);
-                setUser(userData);
-
-                // Set default bid amount for auctions
-                if (productData.is_auction && productData.auction) {
-                    setBidAmount((parseFloat(productData.auction.current_bid || productData.price) + 10).toString());
-                }
-            } catch (err: any) {
-                console.error('Error fetching data:', err);
-                setError(err.message || 'Failed to load product');
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        if (params.id) {
-            fetchData();
-        }
-    }, [params.id]);
-
-    const handlePlaceBid = async () => {
-        if (!product?.is_auction || !product?.auction) return;
-
-        setBidding(true);
-        setBidError(null);
-        setBidSuccess(false);
-
-        try {
-            await auctionsAPI.placeBid(product.auction.id, parseFloat(bidAmount));
-            setBidSuccess(true);
-            // Refresh product data to get updated bid
-            const updatedProduct = await productsAPI.get(params.id as string);
-            setProduct(updatedProduct);
-        } catch (err: any) {
-            console.error('Error placing bid:', err);
-            setBidError(err.message || 'Failed to place bid');
-        } finally {
-            setBidding(false);
-        }
-    };
-
-    const handleDelete = async () => {
-        if (!confirm('هل أنت متأكد من حذف هذا المنتج؟ لا يمكن التراجع عن هذا الإجراء.')) return;
-
-        setDeleting(true);
-        try {
-            await productsAPI.delete(product.id);
-            router.push('/dashboard');
-        } catch (err: any) {
-            console.error('Error deleting product:', err);
-            alert('Fشل في حذف المنتج: ' + (err.message || 'Error occurred'));
-            setDeleting(false);
-        }
-    };
+    const {
+        product, user, loading, error,
+        selectedImage, setSelectedImage,
+        deleting, chatLoading, handleDelete, startChat,
+        bidAmount, setBidAmount, bidding, bidError, bidSuccess, placeBid
+    } = useProductDetails(params.id as string);
 
     if (loading) {
         return (
@@ -295,7 +222,7 @@ export default function ProductPage() {
                                                     className="flex-1 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 bg-white dark:bg-slate-900"
                                                 />
                                                 <button
-                                                    onClick={handlePlaceBid}
+                                                    onClick={placeBid}
                                                     disabled={bidding}
                                                     className="bg-primary hover:bg-primary-700 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                                                 >
@@ -412,17 +339,7 @@ export default function ProductPage() {
                             ) : (
                                 <div className="flex gap-4">
                                     <button
-                                        onClick={async () => {
-                                            if (!user) { router.push('/login'); return; }
-                                            setChatLoading(true);
-                                            try {
-                                                await chatAPI.startConversation(product.id);
-                                                router.push('/messages');
-                                            } catch (err) {
-                                                console.error('Failed to start conversation:', err);
-                                                setChatLoading(false);
-                                            }
-                                        }}
+                                        onClick={startChat}
                                         disabled={chatLoading}
                                         className="flex-1 bg-primary hover:bg-primary-700 text-white py-4 rounded-xl font-bold transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 disabled:opacity-50"
                                     >

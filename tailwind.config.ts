@@ -11,17 +11,17 @@ const config: Config = {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#059669',
-          50: '#ECFDF5',
-          100: '#D1FAE5',
-          200: '#A7F3D0',
-          300: '#6EE7B7',
-          400: '#34D399',
-          500: '#10B981',
+          DEFAULT: '#10b981',
+          50: '#f0fdf4',
+          100: '#dcfce7',
+          200: '#bbf7d0',
+          300: '#86efac',
+          400: '#4ade80',
+          500: '#10b981', // More vibrant Emerald base
           600: '#059669',
           700: '#047857',
-          800: '#065F46',
-          900: '#064E3B',
+          800: '#065f46',
+          900: '#064e3b',
         },
       },
       fontFamily: {

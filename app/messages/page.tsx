@@ -1,84 +1,26 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { chatAPI } from '@/lib/api';
-import { Conversation, ChatMessage } from '@/lib/types';
 import { MessageCircle, Send, ArrowLeft, Package } from 'lucide-react';
+import { useChatMessages } from '@/features/chat/hooks/useChatMessages';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Navbar } from '@/components/layout/navbar';
 import { Footer } from '@/components/layout/footer';
 
 export default function MessagesPage() {
-    const [conversations, setConversations] = useState<Conversation[]>([]);
-    const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
-    const [messages, setMessages] = useState<ChatMessage[]>([]);
-    const [newMessage, setNewMessage] = useState('');
-    const [loading, setLoading] = useState(true);
-    const [sending, setSending] = useState(false);
-    const [showMobileChat, setShowMobileChat] = useState(false);
-    const messagesEndRef = useRef<HTMLDivElement>(null);
-
-    // Load conversations
-    useEffect(() => {
-        loadConversations();
-    }, []);
-
-    // Scroll to bottom on new messages
-    useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages]);
-
-    const loadConversations = async () => {
-        try {
-            setLoading(true);
-            const data = await chatAPI.getConversations();
-            setConversations(Array.isArray(data) ? data : (data as any)?.results || []);
-        } catch (err) {
-            console.error('Failed to load conversations:', err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const selectConversation = async (conv: Conversation) => {
-        try {
-            const data = await chatAPI.getConversation(conv.id);
-            setSelectedConversation(data);
-            setMessages(data.messages || []);
-            setShowMobileChat(true);
-
-            // Update unread count in list
-            setConversations(prev =>
-                prev.map(c => c.id === conv.id ? { ...c, unread_count: 0 } : c)
-            );
-        } catch (err) {
-            console.error('Failed to load conversation:', err);
-        }
-    };
-
-    const handleSendMessage = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!newMessage.trim() || !selectedConversation || sending) return;
-
-        try {
-            setSending(true);
-            const msg = await chatAPI.sendMessage(selectedConversation.id, newMessage.trim());
-            setMessages(prev => [...prev, msg]);
-            setNewMessage('');
-
-            // Update last message in conversation list
-            setConversations(prev =>
-                prev.map(c => c.id === selectedConversation.id
-                    ? { ...c, last_message: { content: msg.content, sender_name: msg.sender_name, created_at: msg.created_at, is_read: false }, updated_at: msg.created_at }
-                    : c
-                ).sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
-            );
-        } catch (err) {
-            console.error('Failed to send message:', err);
-        } finally {
-            setSending(false);
-        }
-    };
+    const {
+        conversations,
+        selectedConversation,
+        messages,
+        newMessage,
+        setNewMessage,
+        loading,
+        sending,
+        showMobileChat,
+        setShowMobileChat,
+        messagesEndRef,
+        selectConversation,
+        sendMessage
+    } = useChatMessages();
 
     const formatTime = (dateStr: string) => {
         const date = new Date(dateStr);
@@ -134,7 +76,7 @@ export default function MessagesPage() {
                                         <p className="text-sm text-slate-500">ابدأ محادثة مع بائع من صفحة أي منتج</p>
                                     </div>
                                 ) : (
-                                    conversations.map(conv => (
+                                    conversations.map((conv: any) => (
                                         <motion.div
                                             key={conv.id}
                                             whileHover={{ backgroundColor: 'rgba(16, 185, 129, 0.05)' }}
@@ -217,7 +159,7 @@ export default function MessagesPage() {
                                             </div>
                                         ) : (
                                             <AnimatePresence>
-                                                {messages.map((msg) => {
+                                                {messages.map((msg: any) => {
                                                     const isMine = msg.sender_name === selectedConversation.buyer?.username
                                                         ? selectedConversation.buyer?.id === getCurrentUserId()
                                                         : selectedConversation.seller?.id === getCurrentUserId();
@@ -254,7 +196,7 @@ export default function MessagesPage() {
                                     </div>
 
                                     {/* Message Input */}
-                                    <form onSubmit={handleSendMessage} className="p-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+                                    <form onSubmit={sendMessage} className="p-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
                                         <div className="flex items-center gap-2">
                                             <input
                                                 type="text"

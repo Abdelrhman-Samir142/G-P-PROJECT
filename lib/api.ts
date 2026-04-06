@@ -26,60 +26,67 @@ export const clearAuthTokens = () => {
     document.cookie = 'refresh_token=; path=/; max-age=0';
 };
 
+import { apiClient } from './axios';
+
 // Generic fetch wrapper with auth
 async function apiFetch<T>(
     endpoint: string,
     options: RequestInit = {}
 ): Promise<T> {
-    const token = getAuthToken();
-
-    const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-        ...(options.headers as Record<string, string>),
-    };
-
-    if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-        ...options,
-        headers,
-    });
-
-    if (!response.ok) {
-        if (response.status === 401) {
-            // Clear invalid tokens silently — no redirect needed
-            clearAuthTokens();
-        }
-        const errorData = await response.json().catch(() => ({ detail: 'An error occurred' }));
-
-        // Handle DRF list of errors or specific field errors
-        let errorMessage = errorData.detail || errorData.message;
-
-        if (!errorMessage && typeof errorData === 'object' && errorData !== null) {
-            // If we have field-specific errors (e.g. { "username": ["Required"], "email": ["Invalid"] })
-            // We join them into a string
-            const messages = Object.entries(errorData)
-                .map(([key, value]) => {
-                    const msg = Array.isArray(value) ? value.join(', ') : String(value);
-                    return `${key}: ${msg}`;
-                })
-                .join(' | ');
-
-            if (messages) errorMessage = messages;
+    const method = options.method || 'GET';
+    try {
+        let data = undefined;
+        if (options.body) {
+            // Handle native RequestInit body parsing to axios data
+            data = typeof options.body === 'string' ? JSON.parse(options.body) : options.body;
         }
 
-        const error = new Error(errorMessage || 'Request failed');
-        (error as any).response = { data: errorData, status: response.status };
+        const response = await apiClient({
+            url: endpoint,
+            method,
+            data,
+            headers: options.headers as Record<string, string>,
+        });
+        
+        return response.data;
+    } catch (error: any) {
+        const status = error.response?.status;
+        const data = error.response?.data;
+        const message = error.message || 'Unknown API error';
+        const isAuthMeRequest = endpoint === '/auth/me/' || endpoint === 'auth/me/';
+
+        if (!error.response) {
+            console.error('[API Error]', method, endpoint, status, data, message);
+            throw new Error(
+                `Network Error: unable to reach API server at ${API_BASE_URL}. ` +
+                'Please ensure the backend is running and accessible.'
+            );
+        }
+
+        if (!isAuthMeRequest) {
+            console.error('[API Error]', method, endpoint, status, data, message);
+        }
+
+        if (error.response?.data) {
+            const errorData = error.response.data;
+            let errorMessage = errorData.detail || errorData.message;
+
+            if (!errorMessage && typeof errorData === 'object') {
+                const messages = Object.entries(errorData)
+                    .map(([key, value]) => {
+                        const msg = Array.isArray(value) ? value.join(', ') : String(value);
+                        return `${key}: ${msg}`;
+                    })
+                    .join(' | ');
+                if (messages) errorMessage = messages;
+            }
+
+            const customError = new Error(errorMessage || 'Request failed');
+            (customError as any).response = { data: errorData, status: error.response.status };
+            throw customError;
+        }
         throw error;
     }
-
-    if (response.status === 204) {
-        return {} as T;
-    }
-
-    return response.json();
 }
 
 // Auth API
@@ -251,6 +258,16 @@ export const profilesAPI = {
         return apiFetch<any>('/profiles/me/', {
             method: 'PATCH',
             body: JSON.stringify(data),
+        });
+    },
+};
+
+// Wallet API
+export const walletAPI = {
+    async recharge(amount: number) {
+        return apiFetch<{ wallet_balance: number }>('/users/wallet/recharge/', {
+            method: 'POST',
+            body: JSON.stringify({ amount }),
         });
     },
 };

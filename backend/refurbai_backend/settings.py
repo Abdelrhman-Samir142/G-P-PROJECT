@@ -23,6 +23,7 @@ ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 # Application definition
 INSTALLED_APPS = [
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -37,8 +38,16 @@ INSTALLED_APPS = [
     'django_filters',
     
     # Local apps
-    'marketplace',
     'rag',
+    'users.apps.UsersConfig',
+    'catalog.apps.CatalogConfig',
+    'auctions.apps.AuctionsConfig',
+    'communications.apps.CommunicationsConfig',
+    'ai_agents.apps.AiAgentsConfig',
+    
+    # Phase 2 additions (uncomment when dependencies are installed)
+    'channels',
+    # 'storages',
 ]
 
 MIDDLEWARE = [
@@ -147,3 +156,37 @@ CORS_ALLOW_CREDENTIALS = True
 # For development, allow all origins (REMOVE IN PRODUCTION)
 if DEBUG:
     CORS_ALLOW_ALL_ORIGINS = True
+
+# Celery Configuration
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE
+
+# Celery Beat Schedule
+CELERY_BEAT_SCHEDULE = {
+    'poll-active-auctions': {
+        'task': 'ai_agents.tasks.poll_active_auctions',
+        'schedule': 60.0,  # Every 60 seconds
+    },
+    'auto-close-auctions': {
+        'task': 'auctions.tasks.auto_close_auctions',
+        'schedule': 60.0,  # Every 60 seconds
+    },
+}
+
+# Channels & WebSockets
+ASGI_APPLICATION = 'refurbai_backend.asgi.application'
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': [os.getenv('REDIS_URL', 'redis://localhost:6379/1')],
+        },
+    },
+}
+
+

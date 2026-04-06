@@ -9,6 +9,7 @@ import { useLanguage } from '@/components/providers/language-provider';
 import { Plus, ShoppingCart, LogOut, Star, TrendingUp, Package, Loader2, Heart, Pencil } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { profilesAPI, productsAPI, authAPI, wishlistAPI } from '@/lib/api';
+import { useWalletRecharge } from '@/features/users/hooks/useWalletRecharge';
 import { staggerContainer, staggerItem, fadeUp, scaleIn } from '@/lib/animations';
 
 export default function ProfilePage() {
@@ -18,6 +19,8 @@ export default function ProfilePage() {
     const [myListings, setMyListings] = useState<any[]>([]);
     const [wishlistItems, setWishlistItems] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [walletError, setWalletError] = useState<string | null>(null);
+    const walletRecharge = useWalletRecharge();
 
     useEffect(() => {
         const fetchData = async () => {
@@ -240,20 +243,79 @@ export default function ProfilePage() {
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: 0.1 }}
                                     whileHover={{ y: -4, transition: { duration: 0.2 } }}
-                                    className="bg-gradient-to-br from-primary to-green-600 p-6 rounded-2xl text-white shadow-lg cursor-default"
+                                    className="relative overflow-hidden rounded-3xl border border-white/20 bg-white/10 p-6 shadow-2xl shadow-emerald-200/10 backdrop-blur-xl text-slate-900 dark:text-white"
                                 >
-                                    <div className="flex items-start justify-between mb-4">
-                                        <motion.div
-                                            whileHover={{ rotate: 10, scale: 1.1 }}
-                                            className="bg-white/20 p-3 rounded-xl backdrop-blur-sm"
-                                        >
-                                            <Package size={24} />
-                                        </motion.div>
+                                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.22),_transparent_30%),radial-gradient(circle_at_bottom_right,_rgba(34,197,94,0.18),_transparent_25%)]" />
+                                    <div className="relative z-10">
+                                        <div className="flex items-start justify-between mb-4">
+                                            <div className="rounded-3xl bg-emerald-50/80 dark:bg-emerald-900/30 p-4 backdrop-blur-sm shadow-sm border border-white/10">
+                                                <Package className="text-emerald-600 dark:text-emerald-300" size={24} />
+                                            </div>
+                                            <span className="text-xs uppercase tracking-[0.24em] font-semibold text-emerald-700 dark:text-emerald-200">Eco-Mint Wallet</span>
+                                        </div>
+
+                                        <p className="text-sm opacity-90 mb-2">{dict.profile.walletBalance}</p>
+                                        <p className="text-4xl font-black mb-4">
+                                            {Number(profile.wallet_balance || 0).toLocaleString('en-US')} <span className="text-base font-medium">{dict.currency}</span>
+                                        </p>
+
+                                        <div className="space-y-3">
+                                            <p className="text-sm text-slate-600 dark:text-slate-300">
+                                                اضف رصيد تجريبي الآن لاختبار حدود المزايدات دون أي بوابة دفع حقيقية.
+                                            </p>
+
+                                            <div className="grid grid-cols-2 gap-3">
+                                                {[500, 1000].map((amount) => (
+                                                    <button
+                                                        key={amount}
+                                                        type="button"
+                                                        disabled={walletRecharge.isPending}
+                                                        onClick={() => {
+                                                            setWalletError(null);
+                                                            walletRecharge.mutate(amount, {
+                                                                onSuccess: (data) => {
+                                                                    setProfile((prev) => ({ ...prev, wallet_balance: data.wallet_balance }));
+                                                                },
+                                                                onError: (error: any) => {
+                                                                    const backendMessage = error?.response?.data?.amount || error?.response?.data?.detail || error?.response?.data?.message;
+                                                                    setWalletError(backendMessage || error?.message || 'Recharge failed');
+                                                                }
+                                                            });
+                                                        }}
+                                                        className="rounded-2xl border border-emerald-200/70 bg-white/90 px-3 py-2 text-sm font-semibold text-slate-900 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-emerald-500/30 dark:bg-slate-900/70 dark:text-white"
+                                                    >
+                                                        +{amount} {dict.currency}
+                                                    </button>
+                                                ))}
+                                            </div>
+
+                                            <AnimatePresence>
+                                                {walletRecharge.isPending && (
+                                                    <motion.div
+                                                        initial={{ opacity: 0, y: 8 }}
+                                                        animate={{ opacity: 1, y: 0 }}
+                                                        exit={{ opacity: 0, y: 8 }}
+                                                        className="rounded-2xl bg-emerald-50/80 px-4 py-3 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-200"
+                                                    >
+                                                        Processing recharge...
+                                                    </motion.div>
+                                                )}
+                                            </AnimatePresence>
+
+                                            <AnimatePresence>
+                                                {walletError && (
+                                                    <motion.div
+                                                        initial={{ opacity: 0, y: 8 }}
+                                                        animate={{ opacity: 1, y: 0 }}
+                                                        exit={{ opacity: 0, y: 8 }}
+                                                        className="rounded-2xl bg-rose-50/90 px-4 py-3 text-rose-700 dark:bg-rose-900/30 dark:text-rose-200"
+                                                    >
+                                                        {walletError}
+                                                    </motion.div>
+                                                )}
+                                            </AnimatePresence>
+                                        </div>
                                     </div>
-                                    <p className="text-sm opacity-90 mb-2">{dict.profile.walletBalance}</p>
-                                    <p className="text-3xl font-black">
-                                        {profile.wallet_balance || 0} <span className="text-base">{dict.currency}</span>
-                                    </p>
                                 </motion.div>
 
                                 {/* Seller Rating */}

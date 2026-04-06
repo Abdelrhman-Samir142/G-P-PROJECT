@@ -1,448 +1,127 @@
-# ✅ RefurbAI Full-Stack Implementation - COMPLETE
+# 🏗️ RefurbAI Architecture Refactoring - Phase 1 COMPLETE
 
 ## 🎯 Project Overview
-
-**RefurbAI** is now a complete full-stack marketplace application with:
-- **Backend:** Django 6.0 + Django REST Framework + PostgreSQL/SQLite
-- **Frontend:** Next.js 16 + TypeScript + Tailwind CSS v3
-- **Authentication:** JWT-based with secure cookie storage
-- **Features:** Products, Auctions, AI Pricing, User Profiles
+We are refactoring the "4Sale" marketplace project to strictly adhere to **Clean Architecture** and **Domain-Driven Design**. The backend is transitioning from a monolithic `marketplace` app into isolated domain apps.
 
 ---
 
 ## 📊 Current Status
 
-### ✅ Backend (Django) - COMPLETED
+### ✅ Phase 1: Splitting the Monolithic `marketplace` App
 
-**Framework:** Django 6.0.2 with Django REST Framework  
-**Database:** SQLite (development) / PostgreSQL (production ready)  
-**Port:** http://localhost:8000
+**Status: COMPLETED**
 
-#### Models Created:
-1. ✅ **UserProfile** - Extended user with trust score, location, wallet
-2. ✅ **Product** - Marketplace listings with categories and conditions3. ✅ **ProductImage** - Multiple images per product
-4. ✅ **Auction** - Live auction system
-5. ✅ **Bid** - Bidding history
-6. ✅ **AIPriceAnalysis** - AI-generated price recommendations
+The old `marketplace` Django app has been **completely removed** and successfully fully split into 5 isolated domain apps. All models, views, URLs, permissions, and business logic have been decoupled.
 
-#### API Endpoints:
-- ✅ `/api/auth/register/` - User registration
-- ✅ `/api/auth/login/` - JWT authentication
-- ✅ `/api/auth/me/` - Current user endpoint
-- ✅ `/api/products/` - CRUD operations for products
-- ✅ `/api/products/{id}/ai_analysis/` - AI price analysis
-- ✅ `/api/auctions/` - Auction listings
-- ✅ `/api/auctions/{id}/place_bid/` - Place bids
-- ✅ `/api/profiles/me/` - User profile management
+#### 1. `users` Domain ✅
+- Manages User profiles, authentication, trust scores, and wallets.
+- Contains: `UserProfile` model.
+- Routing: `/api/auth/`, `/api/profiles/`
 
-#### Configuration:
-- ✅ JWT authentication with SimpleJWT
-- ✅ CORS configured for Next.js frontend
-- ✅ Media file handling (images)
-- ✅ Admin panel at `/admin/`
-- ✅ Pagination (20 items per page)
-- ✅ Filtering, search, and ordering
+#### 2. `catalog` Domain ✅
+- Manages Products, listings, categories, and wishlists.
+- Contains: `Product`, `ProductImage`, `Wishlist` models. 
+- Business logic extracted to `services.py`.
+- Routing: `/api/products/`, `/api/wishlist/`
 
----
+#### 3. `auctions` Domain ✅
+- Manages bidding algorithms, auction timing, and the live auction system.
+- Contains: `Auction`, `Bid` models.
+- Business logic extracted to `services.py` (e.g., `place_bid`).
+- Routing: `/api/auctions/`, `/api/bids/`
 
-### ✅ Frontend (Next.js) - COMPLETED
+#### 4. `communications` Domain ✅
+- Manages buyer-seller chats, messaging, and system notifications.
+- Contains: `Conversation`, `Message`, `Notification` models.
+- Business logic in `services.py` (e.g., `ChatService`, `NotificationService`).
+- Routing: `/api/conversations/`, `/api/notifications/`
 
-**Framework:** Next.js 16.1.6 with App Router  
-**Styling:** Tailwind CSS v3.4.1  
-**Port:** http://localhost:3000
+#### 5. `ai_agents` Domain ✅
+- Manages Smart Agents, target parameters, NLP evaluation, and auto-bidding algorithms.
+- Contains: `UserAgent` model.
+- Logic handled via `AutoBiddingService` and Celery tasks (`trigger_auto_bidding`, `trigger_counter_bid`).
+- Integrates Langchain and YOLO.
+- Routing: `/api/agents/`, `/api/classify-image/`
 
-#### API Integration:
-- ✅ Complete API client (`lib/api.ts`)
-- ✅ Authentication methods (register, login, logout)
-- ✅ Products API (list, get, create, update, delete)
-- ✅ Auctions API (list, place bids)
-- ✅ Profiles API (get, update)
-- ✅ Cookie-based token storage
-- ✅ Automatic token inclusion in requests
-
-#### Pages (Currently Using Mock Data):
-1. ✅ Landing Page (`/`)
-2. ✅ Dashboard (`/dashboard`)
-3. ✅ Product Detail (`/product/[id]`)
-4. ✅ Sell Page (`/sell`)
-5. ✅ Profile (`/profile`)
-6. ✅ Login (`/login`)
+#### 6. Database Migrations & Schema Synchronization ✅
+- **Migration Resolution**: Successfully resolved `psycopg2.errors.UndefinedTable` and `ProgrammingError` by faking redundant index rename migrations (`ai_agents.0002`, `auctions.0002`, etc.) where the target schema was already present.
+- **Forced Table Sync**: Reconstructed missing tables for `wishlists`, `conversations`, and `messages` using a custom `fix_missing_tables.py` script that utilizes Django's `SchemaEditor` to safely create missing model-backed tables without losing migration state.
+- **PostgreSQL Stability**: Verified all primary keys and indexes are correctly mapped for real-time and asynchronous operations.
 
 ---
 
-## 🚀 Running the Application
+### ✅ Phase 2: Asynchronous Workers & Real-Time Setup
 
-### Both Servers Must Be Running:
+**Status: COMPLETED**
 
-#### Terminal 1 - Django Backend:
-```bash
-cd d:\GP\refurbai\backend
-.\venv\Scripts\activate
-python manage.py runserver 8000
-```
-**Status:** ✅ Currently Running
+The system is now powered by scalable asynchronous workers using **Celery**, **Redis**, and **Django Channels**, delivering a real-time, highly-responsive bidding and messaging environment.
 
-#### Terminal 2 - Next.js Frontend:
-```bash
-cd d:\GP\refurbai
-npm run dev
-```
-**Status:** ✅ Currently Running
+#### Tasks Completed:
+1. **Redis Broker**: Setup `redis` dependencies as the primary broker and channels layer back-end (`CHANNEL_LAYERS`).
+2. **Celery Integration**:
+    - Replaced the `run_agents.py` loop with scalable `shared_task` workflows.
+    - Asynchronous ML YOLO (`trigger_auto_bidding`) processing now isolates heavy workloads.
+    - Auction background closing mechanism automated seamlessly.
+3. **WebSockets Configuration (Django Channels & Daphne)**:
+    - Real-Time Messaging enabled through `ChatConsumer`, distributing updates locally to `chat_<id>` rooms.
+    - System Notifications stream seamlessly via `NotificationConsumer`.
+    - Live Bidding engine utilizes `AuctionConsumer` to broadcast pricing state instantaneously.
 
 ---
 
-## 📁 Files Created
+### ✅ Phase 3: Frontend Architecture & Logic Extraction
 
+**Status: COMPLETED**
 
-### Backend Files:
-```
-backend/
-├── marketplace/
-│   ├── models.py              ✅ All database models
-│   ├── serializers.py         ✅ DRF serializers
-│   ├── views.py               ✅ API views with logic
-│   ├── urls.py                ✅ API routing
-│   ├── admin.py               ✅ Admin configuration
-│   └── migrations/            ✅ Database migrations
-├── refurbai_backend/
-│   ├── settings.py            ✅ Django configuration
-│   └── urls.py                ✅ Main URL routing
-├── requirements.txt           ✅ Python dependencies
-├── .env.example               ✅ Environment template
-├── .env                       ✅ Development config
-└── db.sqlite3                 ✅ Development database
-```
-
-### Frontend Files:
-```
-refurbai/
-├── lib/
-│   └── api.ts                 ✅ Complete API client
-├── .env.local.example         ✅ Environment template
-├── .env.local                 ✅ Development config
-└── FULLSTACK_SETUP.md         ✅ Complete setup guide
-```
+- **Feature-Sliced File Structure:** Reorganized Next.js frontend into `features/` directory for modularity.
+- **Custom React Hooks:** Abstracted business logic out of components into pure domain-oriented hooks (`useAuctionBidding`, `useChatMessages`, `useProductDetails`).
+- **Presentation-Centric UI:** Reduced major container components (`messages/page.tsx`, `product/[id]/page.tsx`) to strictly presentation layers consuming pure data from the hooks.
 
 ---
 
-## 🔄 Next Steps - Integration Tasks
+### ✅ Phase 4: Frontend State Management & API Optimization 
 
-### Phase 1: Update Existing Pages
+**Status: COMPLETED**
 
-#### 1. Dashboard Page
-**File:** `app/dashboard/page.tsx`
+We have modernized standard App Router state manipulation globally using **TanStack React Query**, scaling HTTP overhead heavily by natively caching results.
 
-Replace mock data with:
-```typescript
-'use client';
+#### Tasks Completed:
+1. **TanStack React Query**: Configured globally via `QueryClientProvider` and `useQuery` / `useMutation` composition blocks.
+2. **Axios Integration**: Generated `apiClient` singleton configured accurately to intercept invalid 401 token calls, seamlessly hit refreshing points securely, and retry seamlessly.
+3. **Optimistic Mutations**: Reconfigured custom hooks.
+4. **WebSocket Cache Integration**: WebSockets successfully pipe real-time Django Channels data into `useQueryClient` cache invalidations transparently updating UIs without duplicate network calls for `chat_message` and `auction_update`.
 
-import { useEffect, useState } from 'react';
-import { productsAPI } from '@/lib/api';
+### ✅ Phase 5: Notification Center & UI Design
 
-export default function DashboardPage() {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+**Status: COMPLETED**
 
-  useEffect(() => {
-    async function fetchProducts() {
-      try {
-        const data = await productsAPI.list();
-        setProducts(data.results);
-      } catch (error) {
-        console.error('Failed to fetch products:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchProducts();
-  }, []);
-
-  if (loading) return <div>Loading...</div>;
-
-  // Rest of component...
-}
-```
-
-#### 2. Product Detail Page
-**File:** `app/product/[id]/page.tsx`
-
-Fetch product and AI analysis:
-```typescript
-const product = await productsAPI.get(params.id);
-const aiAnalysis = await productsAPI.getAIAnalysis(params.id);
-```
-
-#### 3. Login Page
-**File:** `app/login/page.tsx`
-
-Connect to authentication:
-```typescript
-import { authAPI } from '@/lib/api';
-
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  try {
-    await authAPI.login(email, password);
-    router.push('/dashboard');
-  } catch (error) {
-    setError('Invalid credentials');
-  }
-};
-```
-
-#### 4. Sell Page
-**File:** `app/sell/page.tsx`
-
-Upload product with images:
-```typescript
-const handleSubmit = async () => {
-  const formData = new FormData();
-  formData.append('title', productData.title);
-  formData.append('price', productData.price);
-  // Add images
-  images.forEach((img, i) => {
-    formData.append(`uploaded_images`, img.file);
-  });
-  
-  await productsAPI.create(formData);
-};
-```
-
-### Phase 2: Add Authentication State
-
-Create auth context provider:
-**File:** `components/providers/auth-provider.tsx`
-
-```typescript
-'use client';
-
-import { createContext, useContext, useState, useEffect } from 'react';
-import { authAPI } from '@/lib/api';
-
-const AuthContext = createContext(null);
-
-export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function loadUser() {
-      try {
-        const currentUser = await authAPI.getCurrentUser();
-        setUser(currentUser);
-      } catch (error) {
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadUser();
-  }, []);
-
-  return (
-    <AuthContext.Provider value={{ user, setUser, loading }}>
-      {children}
-    </AuthContext.Provider>
-  );
-}
-
-export const useAuth = () => useContext(AuthContext);
-```
-
-### Phase 3: Image Upload
-
-Update sell page to handle image upload with preview and drag-and-drop functionality.
+- **Light & Comfortable Aesthetic:** Upgraded global Tailwind configs to use a vibrant Eco-Mint primary scale. Injected global ambient background textures using subtle radial mesh gradients in `globals.css` that naturally adapt to both light and dark modes.
+- **Next-Level Animations:** Added a global `template.tsx` to automatically wrap *every* route transition in a beautiful `framer-motion` staggered fade-blur.
+- **Glassmorphism:** Revolutionized the `dashboard/page.tsx` with a sweeping Glassmorphic Hero Banner bridging search, stats, and call-to-actions smoothly.
+- **Notification Center:** Built a fully animated dropdown tracked by an intelligent React Query/WebSocket unified `useNotifications.ts` hook.
 
 ---
 
-## 🧪 Testing the Integration
+## 🚀 Running the Application Environment
 
-### 1. Create Admin User
+### 1. Django Web Server & WebSockets (via Daphne):
 ```bash
 cd backend
-python manage.py createsuperuser
-# Username: admin
-# Email: admin@refurbai.com
-# Password: admin123
-```
-
-### 2. Add Test Data via Admin
-1. Go to http://localhost:8000/admin/
-2. Login with admin credentials
-3. Add a few products manually
-4. Create a user profile for the admin user
-
-### 3. Test Frontend
-1. Go to http://localhost:3000/dashboard
-2. Update dashboard to fetch from API
-3. Products should display from database
-
-### 4. Test Authentication
-1. Register a new user via `/login` page
-2. Login with credentials
-3. Check cookies for access_token
-4. Navigate to protected routes
-
----
-
-## 📋 Environment Variables
-
-### Backend (.env):
-```bash
-SECRET_KEY=django-insecure-dev-key
-DEBUG=True
-ALLOWED_HOSTS=localhost,127.0.0.1
-USE_POSTGRES=False
-CORS_ALLOWED_ORIGINS=http://localhost:3000
-```
-
-### Frontend (.env.local):
-```bash
-NEXT_PUBLIC_API_URL=http://localhost:8000/api
-```
-
----
-
-## 🎨 Design Maintained
-
-✅ Clean, developer-style UI preserved  
-✅ White background with Emerald (#059669) accents  
-✅ Minimal animations  
-✅ Perfect RTL/Arabic support  
-✅ Responsive mobile-first design  
-✅ Dark mode support
-
----
-
-## 📊 Database Schema
-
-```sql
--- UserProfiles
-id, user_id, phone, city, trust_score, is_verified, wallet_balance, seller_rating
-
--- Products
-id, owner_id, title, description, price, category, condition, status, location, is_auction
-
--- ProductImages
-id, product_id, image, is_primary, order
-
--- Auctions
-id, product_id, current_bid, highest_bidder_id, end_time, is_active
-
--- Bids
-id, auction_id, bidder_id, amount, created_at
-
--- AIPriceAnalyses
-id, product_id, market_average, price_difference, recommendation, confidence_score
-```
-
----
-
-## 🎯 Deliverables - COMPLETED
-
-### 1. Backend Development ✅
-- ✅ Django project initialized
-- ✅ PostgreSQL/SQLite database configured
-- ✅ All models defined (Product, Auction, UserProfile, etc.)
-- ✅ JWT authentication with SimpleJWT
-- ✅ Complete API endpoints with CRUD operations
-- ✅ Filtering, search, pagination
-- ✅ AI price analysis generator
-
-### 2. Frontend Integration ✅
-- ✅ API client service layer created
-- ✅ Authentication methods (register, login, logout)
-- ✅ All endpoint functions ready
-- ✅ Cookie-based token management
-- 🔄 **TODO:** Replace mock data in components
-
-### 3. Documentation ✅
-- ✅ Complete setup guide (FULLSTACK_SETUP.md)
-- ✅ API endpoint documentation
-- ✅ Environment variables examples
-- ✅ Troubleshooting section
-
-### 4. Style Maintained ✅
-- ✅ Clean UI preserved
-- ✅ Emerald color scheme
-- ✅ RTL/Arabic support
-- ✅ Responsive design
-
----
-
-## 🚦 Quick Start Commands
-
-```bash
-# Terminal 1 - Backend
-cd d:\GP\refurbai\backend
 .\venv\Scripts\activate
 python manage.py runserver 8000
+# (Daphne intercepts the standard runserver for WebSocket traffic automatically)
+```
 
-# Terminal 2 - Frontend
-cd d:\GP\refurbai
+### 2. Celery Async Task Worker:
+```bash
+cd backend
+.\venv\Scripts\celery.exe -A refurbai_backend worker --loglevel=info --pool=solo
+```
+
+### 2. Next.js Frontend Server:
+```bash
 npm run dev
-
-# Access:
-# Frontend: http://localhost:3000
-# Backend API: http://localhost:8000/api/
-# Admin Panel: http://localhost:8000/admin/
 ```
 
 ---
-
-## 📖 API Usage Examples
-
-### Register User:
-```javascript
-import { authAPI } from '@/lib/api';
-
-const result = await authAPI.register({
-  username: 'ahmed',
-  email: 'ahmed@example.com',
-  password: 'secure123',
-  password2: 'secure123',
-  city: 'Cairo'
-});
-```
-
-### List Products:
-```javascript
-const products = await productsAPI.list({
-  category: 'electronics',
-  min_price: 1000,
-  max_price: 5000
-});
-```
-
-### Create Product:
-```javascript
-const formData = new FormData();
-formData.append('title', 'Laptop Dell');
-formData.append('price', '6500');
-formData.append('category', 'electronics');
-
-const product = await productsAPI.create(formData);
-```
-
----
-
-## 🎉 Success Criteria
-
-✅ Django backend running on port 8000  
-✅ Next.js frontend running on port 3000  
-✅ Database migrations applied  
-✅ API endpoints responding  
-✅ CORS configured correctly  
-✅ JWT authentication working  
-✅ Admin panel accessible  
-✅ API client ready for use  
-
----
-
-**🎊 Full-Stack RefurbAI is READY!**
-
-The backend is fully functional with a complete REST API. The frontend has a ready-to-use API client. Next step is to connect the existing UI components to fetch real data from the Django backend instead of using mock data.
-
----
-
-**Built with ❤️ for Egypt's Circular Economy 🇪🇬**
+**Built for the "4Sale" Clean Architecture Transformation 🛡️**

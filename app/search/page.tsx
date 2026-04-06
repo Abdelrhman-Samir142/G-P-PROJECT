@@ -89,7 +89,7 @@ export default function SmartSearchPage() {
             if (result.answer.items && result.answer.items.length > 0) {
                 const productPromises = result.answer.items.slice(0, 6).map(async (id) => {
                     try {
-                        return await productsAPI.getById(Number(id));
+                        return await productsAPI.get(String(id));
                     } catch {
                         return null;
                     }

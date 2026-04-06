@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('marketplace', '0010_useragent_requirements_prompt'),
+        ('catalog', '0001_initial'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
@@ -18,7 +18,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='ProductEmbedding',
             fields=[
-                ('product', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, primary_key=True, related_name='embedding', serialize=False, to='marketplace.product')),
+                ('product', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, primary_key=True, related_name='embedding', serialize=False, to='catalog.product')),
                 ('embedding', models.JSONField(help_text='1536-dim embedding vector as a list of floats')),
                 ('embedded_text', models.TextField(help_text='The text that was used to generate the embedding')),
                 ('model_name', models.CharField(default='text-embedding-3-small', max_length=100)),
