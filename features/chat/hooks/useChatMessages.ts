@@ -2,9 +2,11 @@ import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { chatAPI } from '@/lib/api';
 import { Conversation, ChatMessage } from '@/lib/types';
+import { useAuth } from '@/components/providers/auth-provider';
 
 export function useChatMessages() {
     const queryClient = useQueryClient();
+    const { user } = useAuth();
     const [selectedConversationId, setSelectedConversationId] = useState<number | null>(null);
     const [newMessage, setNewMessage] = useState('');
     const [showMobileChat, setShowMobileChat] = useState(false);
@@ -15,7 +17,8 @@ export function useChatMessages() {
     // 1. Fetch Conversations via React Query
     const { data: rawConversations, isLoading: loadingConversations } = useQuery({
         queryKey: ['conversations'],
-        queryFn: () => chatAPI.getConversations()
+        queryFn: () => chatAPI.getConversations(),
+        enabled: !!user,
     });
     const conversations = Array.isArray(rawConversations) ? rawConversations : (rawConversations as any)?.results || [];
 
@@ -23,7 +26,7 @@ export function useChatMessages() {
     const { data: selectedConversation, isLoading: loadingMessages } = useQuery({
         queryKey: ['conversation', selectedConversationId],
         queryFn: () => chatAPI.getConversation(selectedConversationId!),
-        enabled: !!selectedConversationId,
+        enabled: !!selectedConversationId && !!user,
     });
 
     const messages = selectedConversation?.messages || [];

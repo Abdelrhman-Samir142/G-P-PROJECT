@@ -7,7 +7,7 @@ import Link from 'next/link';
 import {
     Search, Bot, Loader2, Sparkles, ArrowLeft,
     ShoppingBag, Gavel, BarChart3, Settings,
-    Clock, Zap, Database, Brain, Send
+    Clock, Zap, Database, Brain, Send, X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -61,6 +61,7 @@ export default function SmartSearchPage() {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
+    const [rateLimitError, setRateLimitError] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -106,14 +107,19 @@ export default function SmartSearchPage() {
                 timestamp: new Date(),
             };
             setMessages(prev => [...prev, assistantMsg]);
-        } catch (error) {
-            const errorMsg: ChatMessage = {
-                id: (Date.now() + 1).toString(),
-                role: 'assistant',
-                content: 'حصلت مشكلة في البحث. جرب تاني بعد شوية.',
-                timestamp: new Date(),
-            };
-            setMessages(prev => [...prev, errorMsg]);
+        } catch (error: any) {
+            if (error?.response?.status === 429) {
+                setRateLimitError(true);
+                setTimeout(() => setRateLimitError(false), 5000);
+            } else {
+                const errorMsg: ChatMessage = {
+                    id: (Date.now() + 1).toString(),
+                    role: 'assistant',
+                    content: 'حصلت مشكلة في البحث. جرب تاني بعد شوية.',
+                    timestamp: new Date(),
+                };
+                setMessages(prev => [...prev, errorMsg]);
+            }
         } finally {
             setLoading(false);
         }
@@ -127,6 +133,28 @@ export default function SmartSearchPage() {
     return (
         <>
             <Navbar />
+
+            <AnimatePresence>
+                {rateLimitError && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -50, scale: 0.9 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -20, scale: 0.9 }}
+                        className="fixed top-24 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-6 py-4 bg-emerald-50/90 dark:bg-emerald-900/40 backdrop-blur-xl border border-emerald-200/50 dark:border-emerald-700/50 shadow-2xl rounded-2xl"
+                    >
+                        <div className="bg-emerald-100 dark:bg-emerald-800 p-2 rounded-full">
+                            <Sparkles className="text-emerald-600 dark:text-emerald-300" size={20} />
+                        </div>
+                        <p className="text-emerald-800 dark:text-emerald-200 font-bold text-sm">
+                            You are doing that too fast. Please wait a moment.
+                        </p>
+                        <button onClick={() => setRateLimitError(false)} className="ml-2 text-emerald-600 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-200">
+                            <X size={18} />
+                        </button>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             <main className="min-h-screen bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-900 pt-20">
                 <div className="max-w-4xl mx-auto px-4 py-6 flex flex-col" style={{ height: 'calc(100vh - 80px)' }}>
 

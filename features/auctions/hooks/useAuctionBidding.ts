@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { auctionsAPI, productsAPI } from '@/lib/api';
+import { auctionsAPI, productsAPI, profilesAPI } from '@/lib/api';
 
 export function useAuctionBidding(initialProduct: any, paramsId: string) {
     const queryClient = useQueryClient();
@@ -8,6 +8,7 @@ export function useAuctionBidding(initialProduct: any, paramsId: string) {
     const [product, setProduct] = useState<any>(initialProduct);
     const [bidAmount, setBidAmount] = useState('');
     const [bidSuccess, setBidSuccess] = useState(false);
+    const [customError, setCustomError] = useState<string | null>(null);
 
     // Sync product when it changes externally (hydration from useProductDetails)
     const handleProductChange = (newProduct: any) => {
@@ -75,7 +76,21 @@ export function useAuctionBidding(initialProduct: any, paramsId: string) {
     });
 
     const placeBid = async () => {
+        setCustomError(null);
         if (!product?.is_auction || !product?.auction || bidMutation.isPending) return;
+        
+        try {
+            const profile = await profilesAPI.getMe();
+            const available = parseFloat(profile.wallet_balance || 0) - parseFloat(profile.held_balance || 0);
+            const amount = parseFloat(bidAmount);
+            if (available < amount) {
+                setCustomError(`رصيدك المتاح غير كافٍ. المتاح: ${available.toLocaleString()} ج.م، المطلوب: ${amount.toLocaleString()} ج.م`);
+                return;
+            }
+        } catch (err) {
+            // Safely ignore, the backend will still validate it
+        }
+
         bidMutation.mutate(parseFloat(bidAmount));
     };
 
@@ -85,7 +100,7 @@ export function useAuctionBidding(initialProduct: any, paramsId: string) {
         bidAmount,
         setBidAmount,
         bidding: bidMutation.isPending,
-        bidError: bidMutation.error?.message || null,
+        bidError: customError || (bidMutation.error as any)?.response?.data?.error || bidMutation.error?.message || null,
         bidSuccess,
         placeBid
     };

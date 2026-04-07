@@ -33,6 +33,7 @@ export default function SellPage() {
     const [error, setError] = useState<string | null>(null);
     const [classifying, setClassifying] = useState(false);
     const [aiCategory, setAiCategory] = useState<{ category: string; category_label: string; confidence: number; detected_class: string | null } | null>(null);
+    const [rateLimitError, setRateLimitError] = useState(false);
 
     // Redirect if not authenticated
     if (!authLoading && !user) {
@@ -87,8 +88,12 @@ export default function SellPage() {
                         setFormData(prev => ({ ...prev, category: result.category }));
                     }
                 })
-                .catch((err) => {
+                .catch((err: any) => {
                     console.error('AI classification failed:', err);
+                    if (err?.response?.status === 429) {
+                        setRateLimitError(true);
+                        setTimeout(() => setRateLimitError(false), 5000);
+                    }
                 })
                 .finally(() => {
                     setClassifying(false);
@@ -193,6 +198,28 @@ export default function SellPage() {
     return (
         <>
             <Navbar />
+            
+            <AnimatePresence>
+                {rateLimitError && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -50, scale: 0.9 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -20, scale: 0.9 }}
+                        className="fixed top-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-6 py-4 bg-emerald-50/90 dark:bg-emerald-900/40 backdrop-blur-xl border border-emerald-200/50 dark:border-emerald-700/50 shadow-2xl rounded-2xl"
+                    >
+                        <div className="bg-emerald-100 dark:bg-emerald-800 p-2 rounded-full">
+                            <Sparkles className="text-emerald-600 dark:text-emerald-300" size={20} />
+                        </div>
+                        <p className="text-emerald-800 dark:text-emerald-200 font-bold text-sm">
+                            You are doing that too fast. Please wait a moment.
+                        </p>
+                        <button onClick={() => setRateLimitError(false)} className="ml-2 text-emerald-600 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-200">
+                            <X size={18} />
+                        </button>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             <main className="pt-24 pb-12 min-h-screen px-4 sm:px-6 lg:px-8">
                 <div className="max-w-3xl mx-auto">
                     <div className="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">

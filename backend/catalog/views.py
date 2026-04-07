@@ -3,6 +3,7 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAuthenticatedOrReadOnly
 from django_filters.rest_framework import DjangoFilterBackend
+from django.core.cache import cache
 
 from .models import Product, Wishlist
 from .serializers import ProductListSerializer, ProductDetailSerializer, ProductCreateSerializer
@@ -34,6 +35,21 @@ class ProductViewSet(viewsets.ModelViewSet):
         if self.action == 'list':
             queryset = ProductService.filter_products(queryset, self.request.query_params)
         return queryset
+
+    def list(self, request, *args, **kwargs):
+        """List products with custom personalized Redis caching."""
+        user_id = request.user.id if request.user.is_authenticated else 'anon'
+        query_string = request.META.get('QUERY_STRING', '')
+        cache_key = f"products_list_{user_id}_{query_string}"
+        
+        cached_data = cache.get(cache_key)
+        if cached_data is not None:
+            return Response(cached_data)
+            
+        response = super().list(request, *args, **kwargs)
+        # Cache for 60 seconds
+        cache.set(cache_key, response.data, 60)
+        return response
     
     def retrieve(self, request, *args, **kwargs):
         """Increment views count on product detail view"""

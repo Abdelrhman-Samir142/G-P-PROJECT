@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import { useLanguage } from '@/components/providers/language-provider';
 import {
-    Moon, Sun, Languages, User, Menu, X, LogOut, MessageCircle, Bot, Sparkles
+    Moon, Sun, Languages, User, Menu, X, LogOut, MessageCircle, Bot, Sparkles, LayoutDashboard
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { authAPI, profilesAPI, chatAPI } from '@/lib/api';
@@ -17,8 +17,10 @@ export function Navbar() {
     const { theme, setTheme } = useTheme();
     const { dict, toggleLanguage, isRtl } = useLanguage();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [mounted, setMounted] = useState(false);
     const { user, loading, logout } = useAuth();
     const [unreadCount, setUnreadCount] = useState(0);
+    const [userMenuOpen, setUserMenuOpen] = useState(false);
     const router = useRouter();
     const pathname = usePathname();
 
@@ -28,6 +30,10 @@ export function Navbar() {
         : user?.user?.username?.split('@')[0] || '';
     
     const avatarUrl = user?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.user?.username || 'default'}`;
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     // Fetch unread count periodically
     useEffect(() => {
@@ -118,6 +124,15 @@ export function Navbar() {
                             <Sparkles size={16} />
                             بحث ذكي
                         </Link>
+                        {user?.user?.is_staff && (
+                            <Link
+                                href="/admin"
+                                className={`text-sm font-semibold transition-colors relative pb-1 flex items-center gap-1 ${pathname === '/admin' ? 'text-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:rounded-full' : 'hover:text-primary'}`}
+                            >
+                                <LayoutDashboard size={16} />
+                                Admin Panel
+                            </Link>
+                        )}
                     </div>
 
                     {/* Actions */}
@@ -139,7 +154,7 @@ export function Navbar() {
                             className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
                             aria-label="Toggle theme"
                         >
-                            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+                            {mounted ? (theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />) : <Sun size={18} />}
                         </button>
 
                         {/* Auth Buttons / User Menu */}
@@ -159,30 +174,63 @@ export function Navbar() {
                                         </Link>
                                     </div>
                                 ) : (
-                                    <div className="hidden md:flex items-center gap-3">
-                                        <div className="flex items-center gap-2">
-                                            <Link href="/profile">
-                                                <div className="w-9 h-9 rounded-full bg-slate-200 dark:bg-slate-700 border-2 border-primary overflow-hidden hover:ring-2 hover:ring-primary transition-all cursor-pointer">
-                                                    <img
-                                                        src={avatarUrl}
-                                                        alt={fullUserName}
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                </div>
-                                            </Link>
-                                            <div className="flex flex-col">
+                                    <div className="relative">
+                                        <button
+                                            onClick={() => setUserMenuOpen(!userMenuOpen)}
+                                            className="flex items-center gap-2 p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                                        >
+                                            <div className="w-9 h-9 rounded-full bg-slate-200 dark:bg-slate-700 border-2 border-primary overflow-hidden">
+                                                <img
+                                                    src={avatarUrl}
+                                                    alt={fullUserName}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            </div>
+                                            <div className="flex flex-col text-left">
                                                 <span className="text-sm font-bold">
                                                     {fullUserName}
                                                 </span>
                                             </div>
-                                        </div>
-                                        <button
-                                            onClick={handleLogout}
-                                            className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors text-red-600 dark:text-red-400"
-                                            aria-label="Logout"
-                                        >
-                                            <LogOut size={18} />
                                         </button>
+                                        <AnimatePresence>
+                                            {userMenuOpen && (
+                                                <motion.div
+                                                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                                                    className="absolute right-0 mt-2 w-48 bg-white/90 dark:bg-slate-800/90 backdrop-blur-lg border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg py-2 z-50"
+                                                >
+                                                    <Link
+                                                        href="/profile"
+                                                        className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                                                        onClick={() => setUserMenuOpen(false)}
+                                                    >
+                                                        <User size={16} />
+                                                        Profile
+                                                    </Link>
+                                                    {user?.user?.is_staff && (
+                                                        <Link
+                                                            href="/admin"
+                                                            className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                                                            onClick={() => setUserMenuOpen(false)}
+                                                        >
+                                                            <LayoutDashboard size={16} />
+                                                            Admin Dashboard
+                                                        </Link>
+                                                    )}
+                                                    <button
+                                                        onClick={() => {
+                                                            setUserMenuOpen(false);
+                                                            handleLogout();
+                                                        }}
+                                                        className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 transition-colors w-full text-left"
+                                                    >
+                                                        <LogOut size={16} />
+                                                        Logout
+                                                    </button>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
                                     </div>
                                 )}
                             </>
@@ -255,6 +303,16 @@ export function Navbar() {
                                     >
                                         <Bot size={18} />
                                         الوكيل الذكي
+                                    </Link>
+                                )}
+                                {user?.user?.is_staff && (
+                                    <Link
+                                        href="/admin"
+                                        className={`px-4 py-2 rounded-lg font-semibold flex items-center gap-2 ${pathname === '/admin' ? 'bg-primary/10 text-primary border-r-4 border-primary' : 'hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                                        onClick={() => setMobileMenuOpen(false)}
+                                    >
+                                        <LayoutDashboard size={18} />
+                                        Admin Panel
                                     </Link>
                                 )}
                                 {!loading && (

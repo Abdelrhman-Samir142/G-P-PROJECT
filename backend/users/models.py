@@ -15,6 +15,7 @@ class UserProfile(models.Model):
     is_verified = models.BooleanField(default=False)
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
     wallet_balance = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    held_balance = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total_sales = models.IntegerField(default=0)
     seller_rating = models.DecimalField(max_digits=3, decimal_places=2, default=0)
     created_at = models.DateTimeField(auto_now_add=True)

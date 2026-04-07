@@ -7,6 +7,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
+from django.views.decorators.cache import cache_page
 
 from .models import UserProfile
 from .serializers import UserSerializer, UserProfileSerializer, RegisterSerializer
@@ -19,6 +20,17 @@ from catalog.models import Product
 # ──────────────────────────────────────────────────────────────
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    """Custom JWT serializer to include is_staff in token claims"""
+    
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+        # Add custom claims to the token
+        token['is_staff'] = user.is_staff
+        token['is_admin'] = user.is_staff  # Alias for frontend convenience
+        token['user_id'] = user.id
+        return token
+    
     def validate(self, attrs):
         login_input = attrs.get('username')
         password = attrs.get('password')
@@ -46,6 +58,9 @@ def register_view(request):
     if serializer.is_valid():
         user = serializer.save()
         refresh = RefreshToken.for_user(user)
+        # Add custom claims to token
+        refresh['is_staff'] = user.is_staff
+        refresh['is_admin'] = user.is_staff
 
         return Response({
             'user': UserSerializer(user).data,
@@ -63,10 +78,13 @@ def register_view(request):
 def current_user_view(request):
     """Get current authenticated user with profile"""
     try:
-        profile = UserProfileSerializer(request.user.profile, context={'request': request})
-        return Response(profile.data)
+        profile = request.user.profile
     except UserProfile.DoesNotExist:
-        return Response({'error': 'Profile not found'}, status=status.HTTP_404_NOT_FOUND)
+        # Create profile if it doesn't exist
+        profile = UserProfile.objects.create(user=request.user)
+    
+    serializer = UserProfileSerializer(profile, context={'request': request})
+    return Response(serializer.data)
 
 
 @api_view(['POST'])
@@ -82,7 +100,10 @@ def recharge_wallet_view(request):
         return Response({'amount': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
     serializer = UserProfileSerializer(profile, context={'request': request})
-    return Response({'wallet_balance': serializer.data.get('wallet_balance')}, status=status.HTTP_200_OK)
+    return Response({
+        'wallet_balance': serializer.data.get('wallet_balance'),
+        'held_balance': serializer.data.get('held_balance')
+    }, status=status.HTTP_200_OK)
 
 
 # ──────────────────────────────────────────────────────────────
@@ -114,6 +135,7 @@ class UserProfileViewSet(viewsets.ModelViewSet):
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
+@cache_page(60 * 5)
 def get_general_stats(request):
     """Get general statistics for the landing page"""
     total_users = User.objects.count()

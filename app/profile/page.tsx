@@ -12,6 +12,63 @@ import { profilesAPI, productsAPI, authAPI, wishlistAPI } from '@/lib/api';
 import { useWalletRecharge } from '@/features/users/hooks/useWalletRecharge';
 import { staggerContainer, staggerItem, fadeUp, scaleIn } from '@/lib/animations';
 
+function ProfileSkeleton() {
+    return (
+        <>
+            <Navbar />
+            <div className="min-h-screen pt-32 pb-16">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        {/* Profile Card Skeleton */}
+                        <div className="lg:col-span-1">
+                            <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg rounded-2xl p-6 border border-slate-200 dark:border-slate-700 animate-pulse">
+                                <div className="flex flex-col items-center text-center">
+                                    <div className="w-24 h-24 bg-slate-200 dark:bg-slate-700 rounded-full mb-4"></div>
+                                    <div className="h-6 bg-slate-200 dark:bg-slate-700 rounded w-32 mb-2"></div>
+                                    <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-24"></div>
+                                </div>
+                            </div>
+                        </div>
+                        {/* Stats Skeleton */}
+                        <div className="lg:col-span-2">
+                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+                                {[...Array(4)].map((_, i) => (
+                                    <div key={i} className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg rounded-2xl p-6 border border-slate-200 dark:border-slate-700 animate-pulse">
+                                        <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-16 mb-4"></div>
+                                        <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded w-20"></div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <Footer />
+        </>
+    );
+}
+
+function ErrorFallback() {
+    return (
+        <>
+            <Navbar />
+            <div className="min-h-screen pt-32 flex justify-center items-center">
+                <div className="text-center">
+                    <h2 className="text-2xl font-bold text-red-600 mb-4">Error Loading Profile</h2>
+                    <p className="text-slate-600 dark:text-slate-400 mb-6">Failed to load profile data. Please try again.</p>
+                    <button
+                        onClick={() => window.location.reload()}
+                        className="bg-primary text-white px-6 py-3 rounded-xl font-semibold hover:bg-primary/90 transition-colors"
+                    >
+                        Retry
+                    </button>
+                </div>
+            </div>
+            <Footer />
+        </>
+    );
+}
+
 export default function ProfilePage() {
     const router = useRouter();
     const { dict } = useLanguage();
@@ -19,6 +76,7 @@ export default function ProfilePage() {
     const [myListings, setMyListings] = useState<any[]>([]);
     const [wishlistItems, setWishlistItems] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [walletError, setWalletError] = useState<string | null>(null);
     const walletRecharge = useWalletRecharge();
 
@@ -35,12 +93,16 @@ export default function ProfilePage() {
                 setWishlistItems(wishlistData || []);
             } catch (err) {
                 console.error('Failed to fetch profile', err);
+                setError('Failed to load profile data. Please try again.');
             } finally {
                 setLoading(false);
             }
         };
         fetchData();
     }, []);
+
+    if (loading) return <ProfileSkeleton />;
+    if (error) return <ErrorFallback />;
 
     const handleLogout = () => {
         authAPI.logout();
@@ -61,17 +123,17 @@ export default function ProfilePage() {
         );
     }
 
-    if (!profile) return null;
+    if (!profile) return <ErrorFallback />;
 
-    const user = profile.user || {};
-    const trustScore = profile.trust_score || 50;
+    const user = profile?.user || {};
+    const trustScore = profile?.trust_score || 50;
 
     const statCards = [
         {
             gradient: 'bg-gradient-to-br from-primary to-green-600',
             icon: Package,
             label: dict.profile.walletBalance,
-            value: `${profile.wallet_balance || 0} ${dict.currency}`,
+            value: `${profile?.wallet_balance || 0} ${dict.currency}`,
             delay: 0.1,
         },
         {
@@ -79,7 +141,7 @@ export default function ProfilePage() {
             icon: Star,
             iconClass: 'fill-yellow-400 text-yellow-400',
             label: dict.profile.sellerRating,
-            value: profile.seller_rating || 0,
+            value: profile?.seller_rating || 0,
             isRating: true,
             delay: 0.2,
         },
@@ -89,7 +151,7 @@ export default function ProfilePage() {
             iconBg: 'bg-blue-100 dark:bg-blue-900/30',
             iconColor: 'text-blue-600 dark:text-blue-400',
             label: 'إجمالي المبيعات',
-            value: profile.total_sales || 0,
+            value: profile?.total_sales || 0,
             light: true,
             delay: 0.3,
         },
@@ -129,7 +191,7 @@ export default function ProfilePage() {
                                         className="w-20 h-20 bg-slate-200 dark:bg-slate-700 rounded-full mb-4 border-4 border-primary overflow-hidden cursor-pointer ring-2 ring-transparent hover:ring-primary/40 transition-all"
                                     >
                                         <img
-                                            src={profile.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`}
+                                            src={profile?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.username}`}
                                             alt="avatar"
                                             className="w-full h-full object-cover"
                                         />
@@ -140,7 +202,7 @@ export default function ProfilePage() {
                                         transition={{ delay: 0.3 }}
                                         className="font-bold text-lg mb-1 text-center"
                                     >
-                                        {user.first_name} {user.last_name || ''} (@{user.username})
+                                        {user?.first_name} {user?.last_name || ''} (@{user?.username})
                                     </motion.h3>
                                     <motion.p
                                         initial={{ opacity: 0, y: 6 }}
@@ -148,7 +210,7 @@ export default function ProfilePage() {
                                         transition={{ delay: 0.35 }}
                                         className="text-slate-500 dark:text-slate-400 text-sm"
                                     >
-                                        {profile.city || 'العنوان غير محدد'}
+                                        {profile?.city || 'العنوان غير محدد'}
                                     </motion.p>
 
                                     {/* Trust Score */}
@@ -254,10 +316,24 @@ export default function ProfilePage() {
                                             <span className="text-xs uppercase tracking-[0.24em] font-semibold text-emerald-700 dark:text-emerald-200">Eco-Mint Wallet</span>
                                         </div>
 
-                                        <p className="text-sm opacity-90 mb-2">{dict.profile.walletBalance}</p>
-                                        <p className="text-4xl font-black mb-4">
-                                            {Number(profile.wallet_balance || 0).toLocaleString('en-US')} <span className="text-base font-medium">{dict.currency}</span>
-                                        </p>
+                                        <div className="flex flex-col gap-2 mb-4">
+                                            <div>
+                                                <p className="text-sm opacity-90 mb-1">الرصيد المتاح (Available)</p>
+                                                <p className="text-4xl font-black text-emerald-600 dark:text-emerald-400">
+                                                    {Number((profile.wallet_balance || 0) - (profile.held_balance || 0)).toLocaleString('en-US')} <span className="text-base font-medium">{dict.currency}</span>
+                                                </p>
+                                            </div>
+                                            <div className="flex justify-between items-center bg-white/20 dark:bg-black/20 p-3 rounded-xl backdrop-blur-sm border border-white/10 mt-2">
+                                                <div>
+                                                    <p className="text-xs opacity-80 mb-1">إجمالي الرصيد</p>
+                                                    <p className="font-bold">{Number(profile.wallet_balance || 0).toLocaleString('en-US')} {dict.currency}</p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-xs opacity-80 mb-1">مبلغ محجوز للمزادات</p>
+                                                    <p className="font-bold text-orange-600 dark:text-orange-400">{Number(profile.held_balance || 0).toLocaleString('en-US')} {dict.currency}</p>
+                                                </div>
+                                            </div>
+                                        </div>
 
                                         <div className="space-y-3">
                                             <p className="text-sm text-slate-600 dark:text-slate-300">
@@ -274,7 +350,7 @@ export default function ProfilePage() {
                                                             setWalletError(null);
                                                             walletRecharge.mutate(amount, {
                                                                 onSuccess: (data) => {
-                                                                    setProfile((prev) => ({ ...prev, wallet_balance: data.wallet_balance }));
+                                                                    setProfile((prev: any) => ({ ...prev, wallet_balance: data.wallet_balance, held_balance: data.held_balance || (prev?.held_balance || 0) }));
                                                                 },
                                                                 onError: (error: any) => {
                                                                     const backendMessage = error?.response?.data?.amount || error?.response?.data?.detail || error?.response?.data?.message;

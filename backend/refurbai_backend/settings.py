@@ -132,6 +132,18 @@ REST_FRAMEWORK = {
         'rest_framework.filters.SearchFilter',
         'rest_framework.filters.OrderingFilter',
     ],
+    'DEFAULT_THROTTLE_RATES': {
+        'ai_user': '10/minute',
+        'ai_anon': '3/minute',
+    }
+}
+
+# Caching Settings
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': os.getenv('REDIS_CACHE_URL', 'redis://localhost:6379/2'),
+    }
 }
 
 # JWT Settings

@@ -3,8 +3,9 @@ RAG API Views.
 """
 
 import logging
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.permissions import AllowAny
+from ai_agents.throttles import AIUserRateThrottle, AIAnonRateThrottle
 from rest_framework.response import Response
 from rest_framework import status
 
@@ -15,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
+@throttle_classes([AIUserRateThrottle, AIAnonRateThrottle])
 def rag_query_view(request):
     """
     POST /api/rag/query/

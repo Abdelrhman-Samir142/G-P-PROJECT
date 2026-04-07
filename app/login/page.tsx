@@ -12,7 +12,7 @@ import { staggerContainer, staggerItem } from '@/lib/animations';
 export default function LoginPage() {
     const router = useRouter();
     const { dict } = useLanguage();
-    const { login } = useAuth();
+    const { login, user } = useAuth();
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
@@ -25,8 +25,8 @@ export default function LoginPage() {
 
         try {
             await login(username, password);
-            const urlParams = new URLSearchParams(window.location.search);
-            const redirectUrl = urlParams.get('redirect') || '/dashboard';
+            // Smart redirect based on user role
+            const redirectUrl = user?.user?.is_staff ? '/admin' : '/';
             router.push(redirectUrl);
             router.refresh();
         } catch (err: any) {

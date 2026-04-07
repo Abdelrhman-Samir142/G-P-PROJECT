@@ -28,6 +28,9 @@ export const clearAuthTokens = () => {
 
 import { apiClient } from './axios';
 
+// Export apiClient as `api` for convenience
+export { apiClient as api };
+
 // Generic fetch wrapper with auth
 async function apiFetch<T>(
     endpoint: string,
@@ -176,6 +179,7 @@ export const productsAPI = {
 
         const response = await fetch(`${API_BASE_URL}/products/`, {
             method: 'POST',
+            credentials: 'include',
             headers: {
                 Authorization: `Bearer ${token}`,
             },
@@ -265,7 +269,7 @@ export const profilesAPI = {
 // Wallet API
 export const walletAPI = {
     async recharge(amount: number) {
-        return apiFetch<{ wallet_balance: number }>('/users/wallet/recharge/', {
+        return apiFetch<{ wallet_balance: number; held_balance: number }>('/users/wallet/recharge/', {
             method: 'POST',
             body: JSON.stringify({ amount }),
         });
@@ -352,6 +356,7 @@ export const classifyAPI = {
 
         const response = await fetch(`${API_BASE_URL}/classify-image/`, {
             method: 'POST',
+            credentials: 'include',
             headers,
             body: formData,
         });

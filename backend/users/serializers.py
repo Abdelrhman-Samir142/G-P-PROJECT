@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from .models import UserProfile
 
 
@@ -7,8 +8,8 @@ class UserSerializer(serializers.ModelSerializer):
     """User serializer for authentication responses"""
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name']
-        read_only_fields = ['id']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'is_staff']
+        read_only_fields = ['id', 'is_staff']
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
@@ -19,10 +20,10 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = UserProfile
         fields = [
             'id', 'user', 'phone', 'city', 'trust_score',
-            'is_verified', 'avatar', 'wallet_balance',
+            'is_verified', 'avatar', 'wallet_balance', 'held_balance',
             'total_sales', 'seller_rating', 'created_at'
         ]
-        read_only_fields = ['id', 'trust_score', 'wallet_balance', 'total_sales', 'seller_rating', 'created_at']
+        read_only_fields = ['id', 'trust_score', 'wallet_balance', 'held_balance', 'total_sales', 'seller_rating', 'created_at']
 
 
 class RegisterSerializer(serializers.ModelSerializer):

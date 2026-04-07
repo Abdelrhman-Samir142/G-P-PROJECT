@@ -3,6 +3,7 @@ from django.db import transaction
 from django.utils import timezone
 from auctions.models import Auction, Bid
 from communications.services import NotificationService
+from users.services import WalletService
 
 class AuctionService:
     BID_INCREMENT = Decimal('50.00')
@@ -11,6 +12,9 @@ class AuctionService:
     @transaction.atomic
     def place_bid(auction, user, amount):
         """Core business logic for placing a bid by a user"""
+        # Lock the auction row to prevent race conditions
+        auction = Auction.objects.select_for_update().get(id=auction.id)
+
         amount = Decimal(str(amount))
         
         # Validation checks
@@ -26,6 +30,13 @@ class AuctionService:
             
         if amount <= auction.current_bid:
             raise ValueError(f'Bid must be higher than current price ({auction.current_bid})')
+
+        # Hold funds for the new bidder (will raise ValueError if insufficient available balance)
+        WalletService.hold_funds(user, amount)
+
+        # Release funds for the previous highest bidder
+        if auction.highest_bidder and auction.highest_bidder != user:
+            WalletService.release_funds(auction.highest_bidder, auction.current_bid)
             
         # Create bid
         bid = Bid.objects.create(
@@ -67,6 +78,9 @@ class AuctionService:
     @transaction.atomic
     def close_auction(auction):
         """Close an auction and notify winners"""
+        # Lock the auction row
+        auction = Auction.objects.select_for_update().get(id=auction.id)
+
         if not auction.is_active:
             return
             
@@ -77,8 +91,9 @@ class AuctionService:
         auction.product.status = 'sold'
         auction.product.save(update_fields=['status'])
         
-        # Notify winner
+        # Notify winner and commit funds
         if auction.highest_bidder:
+            WalletService.commit_funds(auction.highest_bidder, auction.current_bid)
             NotificationService.notify_auction_winner(auction)
 
     @staticmethod
