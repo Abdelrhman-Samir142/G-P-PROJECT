@@ -125,7 +125,7 @@ def classify_image(image_path: str) -> dict:
         return fallback
 
     try:
-        from gradio_client import Client, handle_file
+        from gradio_client import Client, file
         
         # Connect to HF Space API
         client = Client(hf_space_url)
@@ -133,7 +133,7 @@ def classify_image(image_path: str) -> dict:
         # Call the predict function
         # The Gradio app we gave the user takes an image file and returns a string
         result_class = client.predict(
-            image=handle_file(image_path),
+            image=file(image_path),
             api_name="/predict"
         )
         
