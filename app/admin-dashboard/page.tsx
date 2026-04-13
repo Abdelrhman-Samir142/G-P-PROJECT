@@ -35,6 +35,7 @@ interface AdminUser {
     first_name: string;
     last_name: string;
     is_staff: boolean;
+    is_admin: boolean;
     date_joined: string;
     city: string;
     phone: string;
@@ -652,7 +653,7 @@ export default function AdminDashboardPage() {
                                                                             <div>
                                                                                 <p className="font-bold text-sm flex items-center gap-1.5">
                                                                                     {u.username}
-                                                                                    {u.is_staff && (
+                                                                                    {u.is_admin && (
                                                                                         <span className="text-[9px] font-bold bg-gradient-to-r from-amber-500 to-orange-500 text-white px-1.5 py-0.5 rounded-full leading-none">
                                                                                             ADMIN
                                                                                         </span>
@@ -673,7 +674,7 @@ export default function AdminDashboardPage() {
                                                                     </td>
                                                                     <td className="py-3 px-3">
                                                                         <div className="flex items-center justify-center">
-                                                                            {u.is_staff ? (
+                                                                            {u.is_admin ? (
                                                                                 <span className="text-xs text-slate-400 font-medium">محمي</span>
                                                                             ) : (
                                                                                 <motion.button

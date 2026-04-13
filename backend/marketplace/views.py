@@ -2,6 +2,7 @@ from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAuthenticatedOrReadOnly, IsAdminUser
+from .permissions import IsAdminRole
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
@@ -134,8 +135,9 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         try:
             result = super().validate(attrs)
             # Include admin status in login response
-            result['is_admin'] = self.user.is_staff
-            print(f"[Backend Auth] Login successful for user: {attrs.get('username')} (is_admin={self.user.is_staff})")
+            has_profile = hasattr(self.user, 'profile')
+            result['is_admin'] = has_profile and self.user.profile.role == 'admin'
+            print(f"[Backend Auth] Login successful for user: {attrs.get('username')} (is_admin={result['is_admin']})")
             return result
         except Exception as e:
             print(f"[Backend Auth] Login failed: {str(e)}")
@@ -177,7 +179,7 @@ def current_user_view(request):
         profile = UserProfileSerializer(request.user.profile, context={'request': request})
         data = profile.data
         # Include admin status in me response
-        data['is_admin'] = request.user.is_staff
+        data['is_admin'] = hasattr(request.user, 'profile') and request.user.profile.role == 'admin'
         return Response(data)
     except UserProfile.DoesNotExist:
         return Response({'error': 'Profile not found'}, status=status.HTTP_404_NOT_FOUND)
@@ -875,7 +877,7 @@ def notifications_unread_count(request):
 # ──────────────────────────────────────────────────────────────
 
 @api_view(['GET'])
-@permission_classes([IsAdminUser])
+@permission_classes([IsAdminRole])
 def admin_products_list(request):
     """Get ALL products for admin dashboard (no pagination, all statuses)"""
     products = Product.objects.select_related('owner').prefetch_related('images').order_by('-created_at')
@@ -900,7 +902,7 @@ def admin_products_list(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAdminUser])
+@permission_classes([IsAdminRole])
 def admin_users_list(request):
     """Get ALL users for admin dashboard"""
     users = User.objects.select_related('profile').order_by('-date_joined')
@@ -919,6 +921,12 @@ def admin_users_list(request):
         except UserProfile.DoesNotExist:
             profile_data = {'city': '', 'phone': '', 'trust_score': 0, 'is_verified': False, 'total_sales': 0}
         
+        try:
+            profile = u.profile
+            is_admin = profile.role == 'admin'
+        except Exception:
+            is_admin = False
+
         data.append({
             'id': u.id,
             'username': u.username,
@@ -926,6 +934,7 @@ def admin_users_list(request):
             'first_name': u.first_name,
             'last_name': u.last_name,
             'is_staff': u.is_staff,
+            'is_admin': is_admin,
             'date_joined': u.date_joined.isoformat(),
             **profile_data,
         })
@@ -933,7 +942,7 @@ def admin_users_list(request):
 
 
 @api_view(['DELETE'])
-@permission_classes([IsAdminUser])
+@permission_classes([IsAdminRole])
 def admin_delete_user(request, user_id):
     """Delete a user (admin only). Cannot delete yourself."""
     if request.user.id == user_id:
