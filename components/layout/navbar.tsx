@@ -100,7 +100,6 @@ export function Navbar() {
   ];
 
   const appLinks = [
-    { name: 'الرئيسية',        href: '/',         icon: <Sparkles size={16} /> },
     { name: dict.nav.shop,       href: '/dashboard', icon: <LayoutDashboard size={16} /> },
     { name: dict.nav.auctions,   href: '/auctions',  icon: <Gavel size={16} /> },
     ...(user ? [
