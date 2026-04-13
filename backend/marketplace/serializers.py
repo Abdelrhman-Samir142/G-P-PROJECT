@@ -22,11 +22,11 @@ class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
         fields = [
-            'id', 'user', 'phone', 'city', 'trust_score', 
+            'id', 'user', 'role', 'phone', 'city', 'trust_score', 
             'is_verified', 'avatar', 'wallet_balance', 
             'total_sales', 'seller_rating', 'created_at'
         ]
-        read_only_fields = ['id', 'trust_score', 'wallet_balance', 'total_sales', 'seller_rating', 'created_at']
+        read_only_fields = ['id', 'role', 'trust_score', 'wallet_balance', 'total_sales', 'seller_rating', 'created_at']
 
 
 class ProductImageSerializer(serializers.ModelSerializer):
