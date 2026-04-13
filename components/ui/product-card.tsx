@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Product } from '@/lib/types';
-import { Clock, Heart, MapPin, BadgeCheck, MessageCircle, Edit3, Trash2, User } from 'lucide-react';
+import { Clock, Heart, MapPin, BadgeCheck, MessageCircle, Edit3, Trash2, User, Tag } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '@/components/providers/language-provider';
 import { wishlistAPI, productsAPI } from '@/lib/api';
@@ -128,12 +128,18 @@ export function ProductCard({
                     className="w-full h-full object-cover group-hover:scale-[1.06] transition-transform duration-500 ease-out"
                 />
 
-                {/* Auction badge */}
+                {/* Auction badge & Sold badge */}
                 <div className="absolute top-3 right-3 flex flex-col gap-2 items-end">
                     {product.isAuction && (
                         <div className="bg-orange-500/90 backdrop-blur-md text-white text-[11px] px-2.5 py-1 rounded-full font-bold shadow-md flex items-center gap-1">
                             <Clock size={11} />
                             {dict.dashboard.activeAuction}
+                        </div>
+                    )}
+                    {product.status === 'sold' && (
+                        <div className="bg-red-600/90 backdrop-blur-md text-white text-[11px] px-2.5 py-1 rounded-full font-bold shadow-md flex items-center gap-1">
+                            <Tag size={11} />
+                            تم البيع
                         </div>
                     )}
                 </div>
@@ -185,23 +191,34 @@ export function ProductCard({
 
                 {/* Seller Footer */}
                 <div className="mt-auto pt-3 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between pointer-events-auto">
-                    <div className="flex items-center gap-2 max-w-[70%]">
-                        {product.seller?.avatar_url ? (
-                            <img src={product.seller.avatar_url} alt={product.seller?.name} className="w-8 h-8 rounded-full object-cover" />
-                        ) : (
+                    {product.seller?.id ? (
+                        <Link href={`/user/${product.seller.id}`} className="flex items-center gap-2 max-w-[70%] group/seller">
+                            {product.seller.avatar_url ? (
+                                <img src={product.seller.avatar_url} alt={product.seller.name} className="w-8 h-8 rounded-full object-cover group-hover/seller:ring-2 ring-primary transition-all" />
+                            ) : (
+                                <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-400 flex-shrink-0 group-hover/seller:text-primary transition-colors">
+                                    <User size={14} />
+                                </div>
+                            )}
+                            <div className="flex items-center gap-1 truncate">
+                                <span className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate group-hover/seller:text-primary transition-colors">
+                                    {product.seller.name || 'مستخدم'}
+                                </span>
+                                {product.seller.is_verified && (
+                                    <BadgeCheck size={14} className="text-blue-500 flex-shrink-0" title="بائع موثوق" />
+                                )}
+                            </div>
+                        </Link>
+                    ) : (
+                        <div className="flex items-center gap-2 max-w-[70%]">
                             <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-400 flex-shrink-0">
                                 <User size={14} />
                             </div>
-                        )}
-                        <div className="flex items-center gap-1 truncate">
-                            <span className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">
-                                {product.seller?.name || 'مستخدم'}
-                            </span>
-                            {product.seller?.is_verified && (
-                                <BadgeCheck size={14} className="text-blue-500 flex-shrink-0" title="بائع موثوق" />
-                            )}
+                            <div className="flex items-center gap-1 truncate">
+                                <span className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">مستخدم</span>
+                            </div>
                         </div>
-                    </div>
+                    )}
                     
                     {/* Actions Area */}
                     {isAdmin ? (

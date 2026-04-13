@@ -2,8 +2,8 @@
 
 import { useLanguage } from '@/components/providers/language-provider';
 import { motion } from 'framer-motion';
-import { Brain, Sparkles, ShieldCheck } from 'lucide-react';
-import { staggerContainer, staggerItem, fadeUp } from '@/lib/animations';
+import { Brain, Sparkles, ShieldCheck, Gavel, MessageCircle, BarChart3 } from 'lucide-react';
+import { staggerContainer, staggerItem } from '@/lib/animations';
 
 const cardVariants = {
     hidden: { opacity: 0, y: 36, scale: 0.96 },
@@ -13,7 +13,7 @@ const cardVariants = {
         scale: 1,
         transition: {
             duration: 0.55,
-            delay: i * 0.15,
+            delay: i * 0.12,
             ease: [0.22, 1, 0.36, 1],
         },
     }),
@@ -46,7 +46,31 @@ export function Features() {
             color: 'text-green-500',
             bg: 'bg-green-50 dark:bg-green-900/10',
             glow: 'group-hover:shadow-green-500/20',
-        }
+        },
+        {
+            icon: Gavel,
+            title: 'مزادات حية',
+            desc: 'نظام مزادات متقدم يتيح لك المنافسة على المنتجات والحصول على أفضل الأسعار مع أعلى درجات الشفافية.',
+            color: 'text-orange-500',
+            bg: 'bg-orange-50 dark:bg-orange-900/10',
+            glow: 'group-hover:shadow-orange-500/20',
+        },
+        {
+            icon: MessageCircle,
+            title: 'مراسلة فورية',
+            desc: 'تواصل مباشر مع البائعين والمشترين عبر نظام المحادثات المدمج بدون الحاجة لمغادرة المنصة.',
+            color: 'text-blue-500',
+            bg: 'bg-blue-50 dark:bg-blue-900/10',
+            glow: 'group-hover:shadow-blue-500/20',
+        },
+        {
+            icon: BarChart3,
+            title: 'تحليلات ذكية',
+            desc: 'لوحة تحكم متقدمة تعرض إحصائيات مبيعاتك وأداء إعلاناتك لمساعدتك على اتخاذ القرارات.',
+            color: 'text-rose-500',
+            bg: 'bg-rose-50 dark:bg-rose-900/10',
+            glow: 'group-hover:shadow-rose-500/20',
+        },
     ];
 
     return (
@@ -79,7 +103,7 @@ export function Features() {
                 </motion.div>
 
                 {/* Cards */}
-                <div className="grid md:grid-cols-3 gap-8 mb-16">
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {features.map((feature, index) => (
                         <motion.div
                             key={index}

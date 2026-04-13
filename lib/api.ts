@@ -59,10 +59,13 @@ async function apiFetch<T>(
 
     const token = getAuthToken();
 
-    const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-        ...(options.headers as Record<string, string>),
-    };
+    const headers: Record<string, string> = {};
+    
+    if (!(options.body instanceof FormData)) {
+        headers['Content-Type'] = 'application/json';
+    }
+
+    Object.assign(headers, options.headers || {});
 
     if (token) {
         headers['Authorization'] = `Bearer ${token}`;
@@ -179,6 +182,7 @@ export const productsAPI = {
         condition?: string;
         is_auction?: boolean;
         auctions_only?: boolean;
+        owner?: string | number;
         search?: string;
         page?: number;
     }) {
@@ -264,6 +268,12 @@ export const productsAPI = {
     async getMyListings() {
         return apiFetch<any[]>('/products/my_listings/');
     },
+
+    async purchase(id: string) {
+        return apiFetch<{ status: string; message: string; new_balance: number }>(`/products/${id}/purchase/`, {
+            method: 'POST',
+        });
+    },
 };
 
 // Auctions API
@@ -284,16 +294,26 @@ export const auctionsAPI = {
     },
 };
 
-// Profiles API
 export const profilesAPI = {
+    async getPublicProfile(userId: string | number) {
+        return apiFetch<any>(`/profiles/by_user/${userId}/`);
+    },
+
+    async rateUser(userId: string | number, rating: number) {
+        return apiFetch<any>(`/profiles/rate/${userId}/`, {
+            method: 'POST',
+            body: JSON.stringify({ rating }),
+        });
+    },
+
     async getMe() {
         return apiFetch<any>('/profiles/me/');
     },
 
-    async update(data: Partial<any>) {
+    async update(data: Partial<any> | FormData) {
         return apiFetch<any>('/profiles/me/', {
             method: 'PATCH',
-            body: JSON.stringify(data),
+            body: data instanceof FormData ? data : JSON.stringify(data),
         });
     },
 };
@@ -507,4 +527,26 @@ export const adminAPI = {
 
     // Product edit/delete reuse existing productsAPI endpoints
     // productsAPI.update(id, data) and productsAPI.delete(id)
+};
+
+// Wallet / Payment API
+export const walletAPI = {
+    async topup(amount: number) {
+        return apiFetch<{ status: string; new_balance: number; amount_added: number }>('/wallet/topup/', {
+            method: 'POST',
+            body: JSON.stringify({ amount }),
+        });
+    },
+
+    async getTransactions() {
+        return apiFetch<{
+            id: number;
+            type: string;
+            type_label: string;
+            amount: number;
+            balance_after: number;
+            description: string;
+            created_at: string;
+        }[]>('/wallet/transactions/');
+    },
 };

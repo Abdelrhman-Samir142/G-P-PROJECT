@@ -70,6 +70,9 @@ def retrieve_hybrid(query: str) -> dict:
 
     merged = merged[:MAX_RESULTS]
 
+    # ── Enrich with seller info ────────────────────────────
+    merged = _enrich_with_seller_info(merged)
+
     logger.info(
         f"[RAG/Hybrid] Merged: {len(merged)} items "
         f"(SQL={len(sql_results)}, Vector={len(vector_results)})"
@@ -83,6 +86,52 @@ def retrieve_hybrid(query: str) -> dict:
     }
 
 
+def _enrich_with_seller_info(items: list) -> list:
+    """Attach seller name, rating, and trust_score to each merged item."""
+    from marketplace.models import Product
+
+    product_ids = []
+    for item in items:
+        pid = item.get('id') or item.get('product_id')
+        if pid:
+            product_ids.append(pid)
+
+    if not product_ids:
+        return items
+
+    try:
+        products = Product.objects.filter(
+            id__in=product_ids
+        ).select_related('owner__profile').only(
+            'id', 'owner__username',
+            'owner__profile__seller_rating',
+            'owner__profile__trust_score',
+            'owner__profile__total_sales',
+        )
+        product_map = {p.id: p for p in products}
+    except Exception as e:
+        logger.error(f"[RAG/Hybrid] Seller enrichment failed: {e}")
+        return items
+
+    for item in items:
+        pid = item.get('id') or item.get('product_id')
+        product = product_map.get(pid)
+        if product:
+            try:
+                profile = product.owner.profile
+                item['seller_name'] = product.owner.username
+                item['seller_rating'] = float(profile.seller_rating)
+                item['trust_score'] = profile.trust_score
+                item['total_sales'] = profile.total_sales
+            except Exception:
+                item['seller_name'] = product.owner.username
+                item['seller_rating'] = 0
+                item['trust_score'] = 50
+                item['total_sales'] = 0
+
+    return items
+
+
 # ── Final Answer Synthesis ─────────────────────────────────
 
 SYNTHESIS_PROMPT = """You are a smart assistant for "4sale" - an Egyptian marketplace for scrap and used items.
@@ -92,16 +141,18 @@ Your job: take search results and summarize them for the user in Egyptian Arabic
 RULES:
 1. Reply in Egyptian Arabic colloquial (not formal Arabic).
 2. Never make up information - only use what's in the results.
-3. If results are empty, say "mafesh nata2eg delwa2ty."
+3. If results are empty, say "مفيش نتايج دلوقتي تطابق اللي بتدور عليه. جرب تدور بكلمات تانية."
 4. Suggest an appropriate action (view_listing, place_bid, compare_prices, set_agent).
+5. When seller info is available (rating, trust_score), mention it naturally.
+   For example: "البائع تقييمه 4.5 نجمة وموثوق بنسبة 90%" or "بائع جديد"
+6. Highlight products from highly-rated sellers (rating >= 4) as "recommended".
 
 Reply in JSON ONLY (no extra text):
 {
-  "summary": "Egyptian Arabic summary of results",
+  "summary": "Egyptian Arabic summary of results with seller trust info",
   "items": [list of product IDs],
   "suggested_action": "view_listing | place_bid | compare_prices | set_agent"
-}
-"""
+}"""
 
 
 def synthesise_answer(query: str, merged_items: list) -> dict:
@@ -122,8 +173,13 @@ def synthesise_answer(query: str, merged_items: list) -> dict:
         condition = item.get('condition', '')
         location = item.get('location', '')
         is_auction = item.get('is_auction', False)
+        seller_name = item.get('seller_name', '')
+        seller_rating = item.get('seller_rating', 0)
+        trust_score = item.get('trust_score', 0)
 
         line = f"- #{pid}: {title} | {price} EGP | {condition} | {location}"
+        if seller_name:
+            line += f" | Seller: {seller_name} (Rating: {seller_rating}/5, Trust: {trust_score}%)"
         if is_auction:
             line += " | AUCTION"
         context_lines.append(line)

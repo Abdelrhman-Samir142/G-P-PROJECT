@@ -6,7 +6,7 @@ import { Navbar } from '@/components/layout/navbar';
 import { Footer } from '@/components/layout/footer';
 import { AuctionTimer } from '@/components/ui/auction-timer';
 import { useLanguage } from '@/components/providers/language-provider';
-import { ArrowRight, ShoppingCart, MapPin, Star, Loader2, Edit, Trash2, MessageCircle } from 'lucide-react';
+import { ArrowRight, ShoppingCart, MapPin, Star, Loader2, Edit, Trash2, MessageCircle, CheckCircle2, Wallet, Tag } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { productsAPI, auctionsAPI, authAPI, chatAPI } from '@/lib/api';
@@ -40,9 +40,14 @@ export default function ProductPage() {
     const [bidAmount, setBidAmount] = useState('');
     const [bidding, setBidding] = useState(false);
     const [bidError, setBidError] = useState<string | null>(null);
+    const [bidInsufficientBalance, setBidInsufficientBalance] = useState(false);
     const [bidSuccess, setBidSuccess] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const [chatLoading, setChatLoading] = useState(false);
+    const [purchasing, setPurchasing] = useState(false);
+    const [purchaseError, setPurchaseError] = useState<string | null>(null);
+    const [purchaseInsufficientBalance, setPurchaseInsufficientBalance] = useState(false);
+    const [purchaseSuccess, setPurchaseSuccess] = useState(false);
 
     // Fetch product and user details
     useEffect(() => {
@@ -84,6 +89,7 @@ export default function ProductPage() {
 
         setBidding(true);
         setBidError(null);
+        setBidInsufficientBalance(false);
         setBidSuccess(false);
 
         try {
@@ -95,6 +101,10 @@ export default function ProductPage() {
         } catch (err: any) {
             console.error('Error placing bid:', err);
             setBidError(err.message || 'Failed to place bid');
+            // Check for insufficient balance flag from backend
+            if (err?.response?.data?.insufficient_balance) {
+                setBidInsufficientBalance(true);
+            }
         } finally {
             setBidding(false);
         }
@@ -111,6 +121,33 @@ export default function ProductPage() {
             console.error('Error deleting product:', err);
             alert('Fشل في حذف المنتج: ' + (err.message || 'Error occurred'));
             setDeleting(false);
+        }
+    };
+
+    const handlePurchase = async () => {
+        if (!user) { router.push('/login'); return; }
+        if (!confirm('هل أنت متأكد من شراء هذا المنتج؟ سيتم خصم المبلغ من رصيدك.')) return;
+
+        setPurchasing(true);
+        setPurchaseError(null);
+        setPurchaseInsufficientBalance(false);
+        setPurchaseSuccess(false);
+
+        try {
+            await productsAPI.purchase(product.id);
+            setPurchaseSuccess(true);
+            // Refresh product data
+            const updatedProduct = await productsAPI.get(params.id as string);
+            setProduct(updatedProduct);
+        } catch (err: any) {
+            console.error('Error purchasing product:', err);
+            if (err?.response?.data?.insufficient_balance) {
+                setPurchaseInsufficientBalance(true);
+            } else {
+                setPurchaseError(err.message || 'فشل الشراء');
+            }
+        } finally {
+            setPurchasing(false);
         }
     };
 
@@ -212,11 +249,19 @@ export default function ProductPage() {
                                 </span>
                                 <div className="flex justify-between items-start gap-4">
                                     <h1 className="text-3xl md:text-4xl font-black mb-3">{product.title}</h1>
-                                    {isOwner && (
-                                        <span className="bg-amber-100 text-amber-800 text-xs px-2 py-1 rounded-md font-bold border border-amber-200">
-                                            منتجك
-                                        </span>
-                                    )}
+                                    <div className="flex items-center gap-2">
+                                        {product.status === 'sold' && (
+                                            <span className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 text-xs px-3 py-1.5 rounded-lg font-bold border border-red-200 dark:border-red-800 flex items-center gap-1">
+                                                <Tag size={12} />
+                                                تم البيع
+                                            </span>
+                                        )}
+                                        {isOwner && (
+                                            <span className="bg-amber-100 text-amber-800 text-xs px-2 py-1 rounded-md font-bold border border-amber-200">
+                                                منتجك
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
 
                                 {/* Location */}
@@ -286,6 +331,15 @@ export default function ProductPage() {
                                             {bidError && (
                                                 <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
                                                     <p className="text-red-600 dark:text-red-400 text-sm text-center">{bidError}</p>
+                                                    {bidInsufficientBalance && (
+                                                        <div className="text-center mt-3">
+                                                            <Link href="/payment">
+                                                                <button className="bg-primary hover:bg-primary/90 text-white px-5 py-2 rounded-lg font-bold text-sm transition-all shadow-sm hover:shadow-md">
+                                                                    💰 اشحن محفظتك
+                                                                </button>
+                                                            </Link>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             )}
                                             <div className="flex gap-3">
@@ -366,16 +420,16 @@ export default function ProductPage() {
 
                             {/* Seller Info */}
                             {product.owner && !isOwner && (
-                                <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+                                <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-xl transition-colors">
                                     <p className="text-xs text-slate-500 dark:text-slate-400 font-bold mb-3">البائع</p>
-                                    <div className="flex items-center gap-3">
+                                    <Link href={`/user/${product.owner.id}`} className="flex items-center gap-3 group">
                                         <img
                                             src={product.owner_profile?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${product.owner.username}`}
                                             alt={product.owner.username}
-                                            className="w-12 h-12 rounded-full border-2 border-primary"
+                                            className="w-12 h-12 rounded-full border-2 border-primary group-hover:ring-4 ring-primary/20 transition-all object-cover"
                                         />
                                         <div className="flex-1">
-                                            <p className="font-bold">{product.owner.first_name || product.owner.username}</p>
+                                            <p className="font-bold group-hover:text-primary transition-colors">{product.owner.first_name || product.owner.username}</p>
                                             <div className="flex items-center gap-2 text-sm">
                                                 {product.owner_profile && (
                                                     <div className="flex items-center gap-1">
@@ -384,11 +438,14 @@ export default function ProductPage() {
                                                     </div>
                                                 )}
                                                 {product.owner_profile?.city && (
-                                                    <span className="text-slate-500">• {product.owner_profile.city}</span>
+                                                    <div className="flex items-center gap-1 text-slate-500">
+                                                        <MapPin size={14} />
+                                                        <span>{product.owner_profile.city}</span>
+                                                    </div>
                                                 )}
                                             </div>
                                         </div>
-                                    </div>
+                                    </Link>
                                 </div>
                             )}
 
@@ -412,28 +469,79 @@ export default function ProductPage() {
                                     </button>
                                 </div>
                             ) : (
-                                <div className="flex gap-4">
-                                    <button
-                                        onClick={async () => {
-                                            if (!user) { router.push('/login'); return; }
-                                            setChatLoading(true);
-                                            try {
-                                                await chatAPI.startConversation(product.id);
-                                                router.push('/messages');
-                                            } catch (err) {
-                                                console.error('Failed to start conversation:', err);
-                                                setChatLoading(false);
-                                            }
-                                        }}
-                                        disabled={chatLoading}
-                                        className="flex-1 bg-primary hover:bg-primary-700 text-white py-4 rounded-xl font-bold transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 disabled:opacity-50"
-                                    >
-                                        {chatLoading ? <Loader2 className="animate-spin" size={20} /> : <MessageCircle size={20} />}
-                                        {dict.product.contactSeller}
-                                    </button>
-                                    <button className="px-6 py-4 border-2 border-slate-300 dark:border-slate-700 hover:border-primary dark:hover:border-primary rounded-xl transition-all hover:bg-primary-50 dark:hover:bg-primary-900/20">
-                                        <ShoppingCart size={20} />
-                                    </button>
+                                <div className="space-y-4">
+                                    {/* Purchase Success */}
+                                    {purchaseSuccess && (
+                                        <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
+                                            <p className="text-green-600 dark:text-green-400 text-sm text-center font-bold">
+                                                🎉 تم شراء المنتج بنجاح! تواصل مع البائع لإتمام التسليم.
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    {/* Purchase Insufficient Balance */}
+                                    {purchaseInsufficientBalance && (
+                                        <div className="p-5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl flex flex-col items-center justify-center gap-3">
+                                            <p className="text-amber-800 dark:text-amber-400 font-bold text-center">
+                                                عفواً، رصيد محفظتك غير كافي لإتمام هذه العملية.
+                                            </p>
+                                            <Link href="/payment" className="w-full sm:w-auto">
+                                                <button className="w-full sm:w-auto px-8 bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-lg font-bold transition-all shadow-sm flex items-center justify-center gap-2">
+                                                    <Wallet size={18} />
+                                                    شحن المحفظة الآن
+                                                </button>
+                                            </Link>
+                                        </div>
+                                    )}
+
+                                    {/* Purchase Error */}
+                                    {purchaseError && (
+                                        <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
+                                            <p className="text-red-600 dark:text-red-400 text-sm text-center">{purchaseError}</p>
+                                        </div>
+                                    )}
+
+                                    <div className="flex gap-4">
+                                        {/* Buy Now Button — only for non-auction, active products */}
+                                        {!product.is_auction && product.status === 'active' && (
+                                            <button
+                                                onClick={handlePurchase}
+                                                disabled={purchasing}
+                                                className="flex-1 bg-primary hover:bg-primary-700 text-white py-4 rounded-xl font-bold transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                {purchasing ? <Loader2 className="animate-spin" size={20} /> : <ShoppingCart size={20} />}
+                                                {purchasing ? 'جاري الشراء...' : `شراء الآن (${parseFloat(product.price).toLocaleString()} ${dict.currency})`}
+                                            </button>
+                                        )}
+
+                                        {/* Sold badge inline */}
+                                        {product.status === 'sold' && !product.is_auction && (
+                                            <div className="flex-1 bg-slate-100 dark:bg-slate-800 text-slate-500 py-4 rounded-xl font-bold flex items-center justify-center gap-2 cursor-not-allowed border border-slate-200 dark:border-slate-700">
+                                                <Tag size={20} />
+                                                تم بيع هذا المنتج
+                                            </div>
+                                        )}
+
+                                        {/* Contact Seller */}
+                                        <button
+                                            onClick={async () => {
+                                                if (!user) { router.push('/login'); return; }
+                                                setChatLoading(true);
+                                                try {
+                                                    await chatAPI.startConversation(product.id);
+                                                    router.push('/messages');
+                                                } catch (err) {
+                                                    console.error('Failed to start conversation:', err);
+                                                    setChatLoading(false);
+                                                }
+                                            }}
+                                            disabled={chatLoading}
+                                            className={`${(!product.is_auction && product.status === 'active') ? '' : 'flex-1'} bg-primary hover:bg-primary-700 text-white py-4 px-6 rounded-xl font-bold transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 disabled:opacity-50`}
+                                        >
+                                            {chatLoading ? <Loader2 className="animate-spin" size={20} /> : <MessageCircle size={20} />}
+                                            {dict.product.contactSeller}
+                                        </button>
+                                    </div>
                                 </div>
                             )}
                         </div>

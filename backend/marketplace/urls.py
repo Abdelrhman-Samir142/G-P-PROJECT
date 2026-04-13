@@ -24,6 +24,8 @@ from .views import (
     admin_products_list,
     admin_users_list,
     admin_delete_user,
+    wallet_topup_view,
+    wallet_transactions_view,
 )
 
 router = DefaultRouter()
@@ -62,6 +64,10 @@ urlpatterns = [
     path('admin-api/products/', admin_products_list, name='admin-products'),
     path('admin-api/users/', admin_users_list, name='admin-users'),
     path('admin-api/users/<int:user_id>/', admin_delete_user, name='admin-delete-user'),
+    
+    # Wallet / Payment
+    path('wallet/topup/', wallet_topup_view, name='wallet-topup'),
+    path('wallet/transactions/', wallet_transactions_view, name='wallet-transactions'),
     
     # Router URLs
     path('', include(router.urls)),

@@ -13,7 +13,7 @@ import random
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-from .models import Product, ProductImage, Auction, Bid, UserProfile, Conversation, Message, Wishlist, UserAgent, Notification
+from .models import Product, ProductImage, Auction, Bid, UserProfile, SellerRating, Conversation, Message, Wishlist, UserAgent, Notification, WalletTransaction
 from .serializers import (
     ProductListSerializer, ProductDetailSerializer, ProductCreateSerializer,
     AuctionSerializer, BidSerializer, UserProfileSerializer, UserSerializer,
@@ -23,7 +23,7 @@ from .serializers import (
 
 
 def close_expired_auctions():
-    """Auto-close expired auctions and notify winners"""
+    """Auto-close expired auctions, refund losers, deduct winner, and notify."""
     expired = Auction.objects.filter(is_active=True, end_time__lte=timezone.now())
     for auction in expired:
         auction.is_active = False
@@ -31,8 +31,67 @@ def close_expired_auctions():
         # Mark the product as sold
         auction.product.status = 'sold'
         auction.product.save(update_fields=['status'])
+
+        # ── Wallet: Refund losers & deduct winner ──
+        winner = auction.highest_bidder
+        all_bids = auction.bids.select_related('bidder', 'bidder__profile').order_by('-amount')
+
+        # Track which users we've already processed (only refund their LATEST held bid)
+        processed_users = set()
+
+        for bid in all_bids:
+            bidder = bid.bidder
+            if bidder.id in processed_users:
+                continue
+            processed_users.add(bidder.id)
+
+            try:
+                profile = bidder.profile
+            except UserProfile.DoesNotExist:
+                continue
+
+            if winner and bidder.id == winner.id:
+                # Winner: the hold stays (already deducted). Log a deduct transaction.
+                WalletTransaction.objects.create(
+                    user=bidder,
+                    transaction_type='bid_deduct',
+                    amount=bid.amount,
+                    balance_after=profile.wallet_balance,
+                    description=f'خصم فوز مزاد: "{auction.product.title}"',
+                    related_auction=auction,
+                )
+                # Transfer funds to seller
+                try:
+                    seller_profile = auction.product.owner.profile
+                    seller_profile.wallet_balance += bid.amount
+                    seller_profile.total_sales = (seller_profile.total_sales or 0) + 1
+                    seller_profile.save(update_fields=['wallet_balance', 'total_sales'])
+                    WalletTransaction.objects.create(
+                        user=auction.product.owner,
+                        transaction_type='topup',
+                        amount=bid.amount,
+                        balance_after=seller_profile.wallet_balance,
+                        description=f'بيع مزاد: "{auction.product.title}" - الفائز: {bidder.username}',
+                        related_auction=auction,
+                    )
+                except UserProfile.DoesNotExist:
+                    pass
+            else:
+                # Loser: refund the held bid amount
+                profile.wallet_balance += bid.amount
+                profile.save(update_fields=['wallet_balance'])
+                WalletTransaction.objects.create(
+                    user=bidder,
+                    transaction_type='bid_refund',
+                    amount=bid.amount,
+                    balance_after=profile.wallet_balance,
+                    description=f'استرداد مزايدة: "{auction.product.title}"',
+                    related_auction=auction,
+                )
+        # ──────────────────────────────────────────
+
         # Send auto-message to winner
-        if auction.highest_bidder:
+        if winner:
             send_winner_message(auction)
 
 
@@ -132,7 +191,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.select_related('owner', 'owner__profile').prefetch_related('images', 'auction')
     permission_classes = [IsAuthenticatedOrReadOnly]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['category', 'condition', 'status', 'is_auction']
+    filterset_fields = ['category', 'condition', 'status', 'is_auction', 'owner']
     search_fields = ['title', 'description', 'location']
     ordering_fields = ['created_at', 'price', 'views_count']
     ordering = ['-created_at']
@@ -200,6 +259,90 @@ class ProductViewSet(viewsets.ModelViewSet):
         serializer = ProductListSerializer(products, many=True, context={'request': request})
         return Response(serializer.data)
 
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def purchase(self, request, pk=None):
+        """Purchase a non-auction product directly using wallet balance"""
+        product = self.get_object()
+
+        # Can't buy your own product
+        if product.owner == request.user:
+            return Response({'error': 'لا يمكنك شراء منتجك الخاص'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Must be active and non-auction
+        if product.status != 'active':
+            return Response({'error': 'هذا المنتج غير متاح للشراء (مباع أو غير نشط)'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if product.is_auction:
+            return Response({'error': 'هذا المنتج مطروح في مزاد، لا يمكن شراؤه مباشرة'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Check buyer wallet
+        try:
+            buyer_profile = request.user.profile
+        except UserProfile.DoesNotExist:
+            return Response({'error': 'الملف الشخصي غير موجود'}, status=status.HTTP_400_BAD_REQUEST)
+
+        price = product.price
+
+        if buyer_profile.wallet_balance < price:
+            return Response({
+                'error': f'رصيدك غير كافي لشراء هذا المنتج. رصيدك: {buyer_profile.wallet_balance} جنيه، والسعر: {price} جنيه.',
+                'insufficient_balance': True,
+                'current_balance': float(buyer_profile.wallet_balance),
+                'required': float(price),
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Deduct from buyer
+        buyer_profile.wallet_balance -= price
+        buyer_profile.save(update_fields=['wallet_balance'])
+        WalletTransaction.objects.create(
+            user=request.user,
+            transaction_type='bid_deduct',
+            amount=price,
+            balance_after=buyer_profile.wallet_balance,
+            description=f'شراء منتج: "{product.title}"',
+        )
+
+        # Add to seller
+        try:
+            seller_profile = product.owner.profile
+            seller_profile.wallet_balance += price
+            seller_profile.total_sales = (seller_profile.total_sales or 0) + 1
+            seller_profile.save(update_fields=['wallet_balance', 'total_sales'])
+            WalletTransaction.objects.create(
+                user=product.owner,
+                transaction_type='topup',
+                amount=price,
+                balance_after=seller_profile.wallet_balance,
+                description=f'بيع منتج: "{product.title}" للمشتري {request.user.username}',
+            )
+        except UserProfile.DoesNotExist:
+            pass
+
+        # Mark product as sold
+        product.status = 'sold'
+        product.save(update_fields=['status'])
+
+        # Send message to seller
+        try:
+            conversation, _ = Conversation.objects.get_or_create(
+                product=product,
+                buyer=request.user,
+                defaults={'seller': product.owner}
+            )
+            Message.objects.create(
+                conversation=conversation,
+                sender=request.user,
+                content=f'🎉 تم شراء المنتج "{product.title}" بمبلغ {price} جنيه. تواصل مع البائع لإتمام التسليم.'
+            )
+        except Exception:
+            pass
+
+        return Response({
+            'status': 'success',
+            'message': f'تم شراء "{product.title}" بنجاح!',
+            'new_balance': float(buyer_profile.wallet_balance),
+        })
+
 
 class AuctionViewSet(viewsets.ReadOnlyModelViewSet):
     """ViewSet for viewing auctions"""
@@ -251,6 +394,54 @@ class AuctionViewSet(viewsets.ReadOnlyModelViewSet):
                 'error': f'يجب أن تكون المزايدة أعلى من السعر الحالي ({auction.current_bid} جنيه)'
             }, status=status.HTTP_400_BAD_REQUEST)
         
+        # ── Wallet Balance Check + Hold ──────────────────
+        try:
+            profile = request.user.profile
+        except UserProfile.DoesNotExist:
+            return Response({'error': 'الملف الشخصي غير موجود'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Check if user had a previous bid on this auction (to refund)
+        previous_bid = Bid.objects.filter(auction=auction, bidder=request.user).order_by('-amount').first()
+        available_balance = profile.wallet_balance
+        if previous_bid:
+            # User already has a held bid; they only need to cover the difference
+            needed = amount - previous_bid.amount
+        else:
+            needed = amount
+        
+        if available_balance < needed:
+            return Response({
+                'error': f'رصيدك غير كافي للمزايدة. رصيدك الحالي: {profile.wallet_balance} جنيه، والمطلوب: {needed} جنيه.',
+                'insufficient_balance': True,
+                'current_balance': float(profile.wallet_balance),
+                'required': float(needed),
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # If user had a previous bid, refund it first
+        if previous_bid:
+            profile.wallet_balance += previous_bid.amount
+            WalletTransaction.objects.create(
+                user=request.user,
+                transaction_type='bid_refund',
+                amount=previous_bid.amount,
+                balance_after=profile.wallet_balance,
+                description=f'استرداد مزايدة سابقة: "{auction.product.title}"',
+                related_auction=auction,
+            )
+        
+        # Hold the new bid amount
+        profile.wallet_balance -= amount
+        profile.save(update_fields=['wallet_balance'])
+        WalletTransaction.objects.create(
+            user=request.user,
+            transaction_type='bid_hold',
+            amount=amount,
+            balance_after=profile.wallet_balance,
+            description=f'حجز مزايدة: "{auction.product.title}"',
+            related_auction=auction,
+        )
+        # ───────────────────────────────────────────────────
+        
         # Create bid
         bid = Bid.objects.create(
             auction=auction,
@@ -292,12 +483,81 @@ class UserProfileViewSet(viewsets.ModelViewSet):
             return self.queryset.filter(user=self.request.user)
         return self.queryset
     
-    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    @action(detail=False, methods=['get', 'patch', 'put'], permission_classes=[IsAuthenticated])
     def me(self, request):
-        """Get current user's profile"""
+        """Get or update current user's profile"""
         profile = get_object_or_404(UserProfile, user=request.user)
+        
+        if request.method in ['PATCH', 'PUT']:
+            serializer = self.get_serializer(profile, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data)
+            
         serializer = self.get_serializer(profile)
         return Response(serializer.data)
+
+    @action(detail=False, methods=['get'], url_path='by_user/(?P<user_id>\d+)', permission_classes=[AllowAny])
+    def by_user(self, request, user_id=None):
+        """Get public profile by user ID"""
+        profile = get_object_or_404(UserProfile.objects.select_related('user'), user__id=user_id)
+        # Custom dict to return specific public fields
+        avatar_url = request.build_absolute_uri(profile.avatar.url) if profile.avatar else None
+        return Response({
+            'user_id': profile.user.id,
+            'name': f"{profile.user.first_name} {profile.user.last_name}".strip() or profile.user.username,
+            'avatar': avatar_url,
+            'trust_score': profile.trust_score,
+            'seller_rating': float(profile.seller_rating),
+            'rating_count': profile.rating_count,
+            'total_sales': profile.total_sales,
+            'city': profile.city,
+            'joined_at': profile.user.date_joined,
+            'is_verified': profile.is_verified,
+        })
+
+    @action(detail=False, methods=['post'], url_path='rate/(?P<user_id>\d+)', permission_classes=[IsAuthenticated])
+    def rate(self, request, user_id=None):
+        """Rate a user's profile"""
+        profile = get_object_or_404(UserProfile, user__id=user_id)
+        
+        # Prevent self-rating
+        if profile.user == request.user:
+            return Response({'error': 'لا يمكنك تقييم نفسك'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        rating = request.data.get('rating')
+        try:
+            rating = float(rating)
+            if rating < 1 or rating > 5:
+                raise ValueError
+        except (TypeError, ValueError):
+            return Response({'error': 'التقييم يجب أن يكون رقماً من 1 إلى 5'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Update or create the individual rating
+        SellerRating.objects.update_or_create(
+            seller=profile,
+            rater=request.user,
+            defaults={'rating': int(rating)}
+        )
+
+        # Recalculate average and count from database
+        aggregate = SellerRating.objects.filter(seller=profile).aggregate(
+            avg_rating=models.Avg('rating'),
+            total_count=models.Count('rating')
+        )
+        
+        new_rating = aggregate['avg_rating'] or 0
+        new_count = aggregate['total_count'] or 0
+        
+        profile.seller_rating = new_rating
+        profile.rating_count = new_count
+        profile.save(update_fields=['seller_rating', 'rating_count'])
+        
+        return Response({
+            'message': 'تم إضافة التقييم بنجاح',
+            'new_rating': round(new_rating, 2),
+            'rating_count': new_count
+        })
 
 
 class ConversationViewSet(viewsets.ModelViewSet):
@@ -683,4 +943,69 @@ def admin_delete_user(request, user_id):
     username = user.username
     user.delete()
     return Response({'status': 'deleted', 'username': username}, status=status.HTTP_200_OK)
+
+
+# ──────────────────────────────────────────────────────────────
+# WALLET / PAYMENT ENDPOINTS
+# ──────────────────────────────────────────────────────────────
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def wallet_topup_view(request):
+    """Simulated payment: add funds to wallet instantly (no real payment)"""
+    amount_raw = request.data.get('amount')
+    if amount_raw is None:
+        return Response({'error': 'المبلغ مطلوب'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        amount = Decimal(str(amount_raw))
+    except Exception:
+        return Response({'error': 'مبلغ غير صالح'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if amount <= 0:
+        return Response({'error': 'المبلغ يجب أن يكون أكبر من صفر'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if amount > 100000:
+        return Response({'error': 'الحد الأقصى للشحن الواحد 100,000 جنيه'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        profile = request.user.profile
+    except UserProfile.DoesNotExist:
+        return Response({'error': 'الملف الشخصي غير موجود'}, status=status.HTTP_404_NOT_FOUND)
+
+    profile.wallet_balance += amount
+    profile.save(update_fields=['wallet_balance'])
+
+    WalletTransaction.objects.create(
+        user=request.user,
+        transaction_type='topup',
+        amount=amount,
+        balance_after=profile.wallet_balance,
+        description=f'شحن رصيد: {amount} جنيه',
+    )
+
+    return Response({
+        'status': 'success',
+        'new_balance': float(profile.wallet_balance),
+        'amount_added': float(amount),
+    })
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def wallet_transactions_view(request):
+    """Get the user's wallet transaction history"""
+    transactions = WalletTransaction.objects.filter(user=request.user)[:50]
+    data = []
+    for t in transactions:
+        data.append({
+            'id': t.id,
+            'type': t.transaction_type,
+            'type_label': dict(WalletTransaction.TRANSACTION_TYPES).get(t.transaction_type, t.transaction_type),
+            'amount': float(t.amount),
+            'balance_after': float(t.balance_after),
+            'description': t.description,
+            'created_at': t.created_at.isoformat(),
+        })
+    return Response(data)
 

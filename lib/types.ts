@@ -17,6 +17,7 @@ export interface Product {
     };
     biddingHistory?: Bid[];
     endTime?: string;
+    status?: string;
 }
 
 export interface Bid {

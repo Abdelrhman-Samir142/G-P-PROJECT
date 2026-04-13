@@ -6,14 +6,16 @@ import { useState, useEffect } from 'react';
 import { Navbar } from '@/components/layout/navbar';
 import { Footer } from '@/components/layout/footer';
 import { useLanguage } from '@/components/providers/language-provider';
-import { Plus, ShoppingCart, LogOut, Star, TrendingUp, Package, Loader2, Heart, Pencil } from 'lucide-react';
+import { Plus, ShoppingCart, LogOut, Star, TrendingUp, Package, Loader2, Heart, Pencil, Wallet, Camera } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { profilesAPI, productsAPI, authAPI, wishlistAPI } from '@/lib/api';
+import { useAuth } from '@/components/providers/auth-provider';
 import { staggerContainer, staggerItem, fadeUp, scaleIn } from '@/lib/animations';
 
 export default function ProfilePage() {
     const router = useRouter();
     const { dict } = useLanguage();
+    const { refreshUser } = useAuth();
     const [profile, setProfile] = useState<any>(null);
     const [myListings, setMyListings] = useState<any[]>([]);
     const [wishlistItems, setWishlistItems] = useState<any[]>([]);
@@ -42,6 +44,24 @@ export default function ProfilePage() {
     const handleLogout = () => {
         authAPI.logout();
         router.push('/login');
+    };
+
+    const handleAvatarUpdate = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files || !e.target.files[0]) return;
+        
+        const file = e.target.files[0];
+        const formData = new FormData();
+        formData.append('avatar', file);
+
+        try {
+            const updatedProfile = await profilesAPI.update(formData);
+            setProfile(updatedProfile);
+            // Update auth state globally so Navbar reflects the new avatar
+            await refreshUser();
+        } catch (err) {
+            console.error('Failed to update avatar', err);
+            alert('تعذر تحديث الصورة الشخصية');
+        }
     };
 
     if (loading) {
@@ -123,14 +143,25 @@ export default function ProfilePage() {
                                         animate={{ scale: 1, opacity: 1 }}
                                         transition={{ type: 'spring', stiffness: 280, damping: 18, delay: 0.2 }}
                                         whileHover={{ scale: 1.06 }}
-                                        className="w-20 h-20 bg-slate-200 dark:bg-slate-700 rounded-full mb-4 border-4 border-primary overflow-hidden cursor-pointer ring-2 ring-transparent hover:ring-primary/40 transition-all"
+                                        className="w-20 h-20 bg-slate-200 dark:bg-slate-700 rounded-full mb-4 border-4 border-primary overflow-hidden cursor-pointer ring-2 ring-transparent hover:ring-primary/40 transition-all relative group"
+                                        onClick={() => document.getElementById('avatar-upload')?.click()}
                                     >
                                         <img
                                             src={profile.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`}
                                             alt="avatar"
                                             className="w-full h-full object-cover"
                                         />
+                                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <Camera size={20} className="text-white" />
+                                        </div>
                                     </motion.div>
+                                    <input 
+                                        type="file" 
+                                        id="avatar-upload" 
+                                        className="hidden" 
+                                        accept="image/*"
+                                        onChange={handleAvatarUpdate}
+                                    />
                                     <motion.h3
                                         initial={{ opacity: 0, y: 8 }}
                                         animate={{ opacity: 1, y: 0 }}
@@ -254,6 +285,16 @@ export default function ProfilePage() {
                                     <p className="text-3xl font-black">
                                         {profile.wallet_balance || 0} <span className="text-base">{dict.currency}</span>
                                     </p>
+                                    <Link href="/payment">
+                                        <motion.button
+                                            whileHover={{ scale: 1.04 }}
+                                            whileTap={{ scale: 0.96 }}
+                                            className="mt-4 w-full bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all border border-white/10"
+                                        >
+                                            <Wallet size={16} />
+                                            {dict.profile.topUpWallet}
+                                        </motion.button>
+                                    </Link>
                                 </motion.div>
 
                                 {/* Seller Rating */}

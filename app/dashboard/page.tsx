@@ -181,6 +181,8 @@ export default function DashboardPage() {
         description: p.description || '',
         endTime: p.auction?.end_time,
         createdAt: p.created_at,
+        status: p.status || 'active',
+        seller: p.seller,
     });
 
     const isOwnerOf = (p: any): boolean => !!(user && p.owner_id === user.id);

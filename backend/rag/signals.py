@@ -2,11 +2,12 @@
 Auto-embed products on save using Django signals.
 When a product is created or updated, its embedding is generated
 in a background thread to avoid blocking the request.
+Also cleans up embeddings when a product is deleted.
 """
 
 import logging
 import threading
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.db import connection
 
@@ -27,13 +28,20 @@ def _embed_in_background(product_id):
 
 
 @receiver(post_save, sender='marketplace.Product')
-def auto_embed_product(sender, instance, **kwargs):
+def auto_embed_product(sender, instance, created, **kwargs):
     """
-    Whenever a Product is saved, queue an embedding generation.
+    Whenever a Product is saved (created or updated), queue an embedding generation.
     Runs in a daemon thread so it doesn't block the HTTP response.
     """
     # Only embed active products
     if instance.status != 'active':
+        # If product was deactivated/sold, remove its embedding
+        try:
+            from rag.models import ProductEmbedding
+            ProductEmbedding.objects.filter(product_id=instance.id).delete()
+            logger.info(f"[RAG/Signal] Removed embedding for inactive product #{instance.id}")
+        except Exception:
+            pass
         return
 
     threading.Thread(
@@ -41,3 +49,17 @@ def auto_embed_product(sender, instance, **kwargs):
         args=(instance.id,),
         daemon=True,
     ).start()
+
+
+@receiver(post_delete, sender='marketplace.Product')
+def cleanup_embedding_on_delete(sender, instance, **kwargs):
+    """
+    When a Product is deleted, remove its embedding from the database.
+    """
+    try:
+        from rag.models import ProductEmbedding
+        deleted_count, _ = ProductEmbedding.objects.filter(product_id=instance.id).delete()
+        if deleted_count:
+            logger.info(f"[RAG/Signal] Cleaned up embedding for deleted product #{instance.id}")
+    except Exception as e:
+        logger.error(f"[RAG/Signal] Failed to clean up embedding for product #{instance.id}: {e}")

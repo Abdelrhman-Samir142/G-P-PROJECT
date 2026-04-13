@@ -13,6 +13,10 @@ import { useRouter, usePathname } from 'next/navigation';
 
 import { useAuth } from '@/components/providers/auth-provider';
 
+// Module-level cache to prevent spamming the API on every page navigation
+let lastUnreadFetchTime = 0;
+let cachedUnreadCount = 0;
+
 export function Navbar() {
     const { theme, setTheme } = useTheme();
     const { dict, toggleLanguage, isRtl } = useLanguage();
@@ -65,7 +69,17 @@ export function Navbar() {
                     clearInterval(interval);
                     return;
                 }
+                
+                // Throttle requests to max 1 per 20 seconds across page navigations
+                const now = Date.now();
+                if (now - lastUnreadFetchTime < 20000) {
+                    setUnreadCount(cachedUnreadCount);
+                    return;
+                }
+
                 const data = await chatAPI.getUnreadCount();
+                cachedUnreadCount = data.unread_count;
+                lastUnreadFetchTime = now;
                 setUnreadCount(data.unread_count);
             } catch (e: any) {
                 // If unauthorized, stop polling
@@ -76,10 +90,13 @@ export function Navbar() {
             }
         };
 
+        // Initialize immediately but respect cache
+        setUnreadCount(cachedUnreadCount);
         fetchUnread();
-        interval = setInterval(fetchUnread, 60000); // Poll every 60 seconds
+        
+        interval = setInterval(fetchUnread, 30000); // Poll every 30 seconds
         return () => clearInterval(interval);
-    }, [user]);
+    }, [user?.user?.id]);
 
     const handleLogout = () => {
         logout();
@@ -100,64 +117,82 @@ export function Navbar() {
 
                     {/* Desktop Navigation */}
                     <div className="hidden md:flex items-center gap-6">
-                        <Link
-                            href="/"
-                            className={getNavItemClass('/')}
-                        >
-                            {dict.nav.home}
-                        </Link>
-                        <Link
-                            href={isLoggedIn ? "/dashboard" : "/login"}
-                            className={getNavItemClass('/dashboard')}
-                        >
-                            {dict.nav.shop}
-                        </Link>
-                        <Link
-                            href={isLoggedIn ? "/auctions" : "/login"}
-                            className={getNavItemClass('/auctions')}
-                        >
-                            {dict.nav.auctions}
-                        </Link>
-                        {isLoggedIn && (
-                            <Link
-                                href="/messages"
-                                className={getNavItemClass('/messages')}
-                            >
-                                <MessageCircle size={16} className={pathname.startsWith('/messages') ? "text-primary" : ""} />
-                                الرسائل
-                                {unreadCount > 0 && (
-                                    <span className="bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
-                                        {unreadCount}
-                                    </span>
-                                )}
-                            </Link>
-                        )}
-                        {isLoggedIn && (
+                        {!isLoggedIn && pathname === '/' ? (
+                            /* Landing Page Section Links */
+                            <>
+                                <a href="#features" className="text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-primary transition-colors">
+                                    المميزات
+                                </a>
+                                <a href="#how-it-works" className="text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-primary transition-colors">
+                                    كيف يعمل
+                                </a>
+                                <a href="#why-us" className="text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-primary transition-colors">
+                                    لماذا 4Sale
+                                </a>
+                                <a href="#testimonials" className="text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-primary transition-colors">
+                                    آراء العملاء
+                                </a>
+                                <a href="#faq" className="text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-primary transition-colors">
+                                    الأسئلة الشائعة
+                                </a>
+                            </>
+                        ) : (
+                            /* App Navigation Links */
                             <>
                                 <Link
-                                    href="/agent"
-                                    className={getNavItemClass('/agent')}
+                                    href={isLoggedIn ? "/dashboard" : "/login"}
+                                    className={getNavItemClass('/dashboard')}
                                 >
-                                    <Bot size={16} className={pathname.startsWith('/agent') ? "text-primary" : ""} />
-                                    الوكيل الذكي
+                                    {dict.nav.shop}
                                 </Link>
                                 <Link
-                                    href="/search"
-                                    className={getNavItemClass('/search')}
+                                    href={isLoggedIn ? "/auctions" : "/login"}
+                                    className={getNavItemClass('/auctions')}
                                 >
-                                    <Sparkles size={16} className={pathname.startsWith('/search') ? "text-primary" : ""} />
-                                    بوت ذكي
+                                    {dict.nav.auctions}
                                 </Link>
+                                {isLoggedIn && (
+                                    <Link
+                                        href="/messages"
+                                        className={getNavItemClass('/messages')}
+                                    >
+                                        <MessageCircle size={16} className={pathname.startsWith('/messages') ? "text-primary" : ""} />
+                                        الرسائل
+                                        {unreadCount > 0 && (
+                                            <span className="bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                                                {unreadCount}
+                                            </span>
+                                        )}
+                                    </Link>
+                                )}
+                                {isLoggedIn && (
+                                    <>
+                                        <Link
+                                            href="/agent"
+                                            className={getNavItemClass('/agent')}
+                                        >
+                                            <Bot size={16} className={pathname.startsWith('/agent') ? "text-primary" : ""} />
+                                            الوكيل الذكي
+                                        </Link>
+                                        <Link
+                                            href="/search"
+                                            className={getNavItemClass('/search')}
+                                        >
+                                            <Sparkles size={16} className={pathname.startsWith('/search') ? "text-primary" : ""} />
+                                            بوت ذكي
+                                        </Link>
+                                    </>
+                                )}
+                                {isAdmin && (
+                                    <Link
+                                        href="/admin-dashboard"
+                                        className={getNavItemClass('/admin-dashboard')}
+                                    >
+                                        <Shield size={16} className={pathname.startsWith('/admin-dashboard') ? "text-primary" : ""} />
+                                        لوحة الإدارة
+                                    </Link>
+                                )}
                             </>
-                        )}
-                        {isAdmin && (
-                            <Link
-                                href="/admin-dashboard"
-                                className={getNavItemClass('/admin-dashboard')}
-                            >
-                                <Shield size={16} className={pathname.startsWith('/admin-dashboard') ? "text-primary" : ""} />
-                                لوحة الإدارة
-                            </Link>
                         )}
                     </div>
 
@@ -252,41 +287,58 @@ export function Navbar() {
                             className="md:hidden border-t border-slate-200 dark:border-slate-800 py-4"
                         >
                             <div className="flex flex-col gap-3">
-                                <Link
-                                    href="/"
-                                    className={getMobileNavItemClass('/')}
-                                    onClick={() => setMobileMenuOpen(false)}
-                                >
-                                    {dict.nav.home}
-                                </Link>
-                                <Link
-                                    href={isLoggedIn ? "/dashboard" : "/login?redirect=/dashboard"}
-                                    className={getMobileNavItemClass('/dashboard')}
-                                    onClick={() => setMobileMenuOpen(false)}
-                                >
-                                    {dict.nav.shop}
-                                </Link>
-                                <Link
-                                    href={isLoggedIn ? "/auctions" : "/login?redirect=/auctions"}
-                                    className={getMobileNavItemClass('/auctions')}
-                                    onClick={() => setMobileMenuOpen(false)}
-                                >
-                                    {dict.nav.auctions}
-                                </Link>
-                                {isLoggedIn && (
-                                    <Link
-                                        href="/messages"
-                                        className={getMobileNavItemClass('/messages')}
-                                        onClick={() => setMobileMenuOpen(false)}
-                                    >
-                                        <MessageCircle size={18} className={pathname.startsWith('/messages') ? "text-primary" : ""} />
-                                        الرسائل
-                                        {unreadCount > 0 && (
-                                            <span className="bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
-                                                {unreadCount}
-                                            </span>
+                                {!isLoggedIn && pathname === '/' ? (
+                                    /* Landing Page Section Links (Mobile) */
+                                    <>
+                                        <a href="#features" className="px-4 py-2.5 rounded-lg font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-primary" onClick={() => setMobileMenuOpen(false)}>
+                                            المميزات
+                                        </a>
+                                        <a href="#how-it-works" className="px-4 py-2.5 rounded-lg font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-primary" onClick={() => setMobileMenuOpen(false)}>
+                                            كيف يعمل
+                                        </a>
+                                        <a href="#why-us" className="px-4 py-2.5 rounded-lg font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-primary" onClick={() => setMobileMenuOpen(false)}>
+                                            لماذا 4Sale
+                                        </a>
+                                        <a href="#testimonials" className="px-4 py-2.5 rounded-lg font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-primary" onClick={() => setMobileMenuOpen(false)}>
+                                            آراء العملاء
+                                        </a>
+                                        <a href="#faq" className="px-4 py-2.5 rounded-lg font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-primary" onClick={() => setMobileMenuOpen(false)}>
+                                            الأسئلة الشائعة
+                                        </a>
+                                    </>
+                                ) : (
+                                    /* App Navigation Links (Mobile) */
+                                    <>
+                                        <Link
+                                            href={isLoggedIn ? "/dashboard" : "/login?redirect=/dashboard"}
+                                            className={getMobileNavItemClass('/dashboard')}
+                                            onClick={() => setMobileMenuOpen(false)}
+                                        >
+                                            {dict.nav.shop}
+                                        </Link>
+                                        <Link
+                                            href={isLoggedIn ? "/auctions" : "/login?redirect=/auctions"}
+                                            className={getMobileNavItemClass('/auctions')}
+                                            onClick={() => setMobileMenuOpen(false)}
+                                        >
+                                            {dict.nav.auctions}
+                                        </Link>
+                                        {isLoggedIn && (
+                                            <Link
+                                                href="/messages"
+                                                className={getMobileNavItemClass('/messages')}
+                                                onClick={() => setMobileMenuOpen(false)}
+                                            >
+                                                <MessageCircle size={18} className={pathname.startsWith('/messages') ? "text-primary" : ""} />
+                                                الرسائل
+                                                {unreadCount > 0 && (
+                                                    <span className="bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                                                        {unreadCount}
+                                                    </span>
+                                                )}
+                                            </Link>
                                         )}
-                                    </Link>
+                                    </>
                                 )}
                                 {isLoggedIn && (
                                     <>

@@ -19,10 +19,11 @@ export function middleware(request: NextRequest) {
         return NextResponse.redirect(loginUrl);
     }
 
-    // 2. Redirect authenticated users away from auth pages (login/register) — NOT from homepage
+    // 2. Redirect authenticated users away from auth pages AND homepage to dashboard
     const isAuthPage = path === '/login' || path === '/register';
-    if (isAuthPage && token) {
-        return NextResponse.redirect(new URL('/', request.url));
+    const isHomePage = path === '/';
+    if ((isAuthPage || isHomePage) && token) {
+        return NextResponse.redirect(new URL('/dashboard', request.url));
     }
 
     return NextResponse.next();
