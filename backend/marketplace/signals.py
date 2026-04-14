@@ -71,3 +71,5 @@ def trigger_agent_discovery(sender, instance, created, **kwargs):
         args=(instance.id,),
         daemon=True,
     ).start()
+
+

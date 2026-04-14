@@ -30,6 +30,7 @@ from .views import (
     reset_password_view,
     update_profile_view,
     change_password_view,
+    visual_search_view,
 )
 
 router = DefaultRouter()
@@ -76,6 +77,9 @@ urlpatterns = [
     # Wallet / Payment
     path('wallet/topup/', wallet_topup_view, name='wallet-topup'),
     path('wallet/transactions/', wallet_transactions_view, name='wallet-transactions'),
+    
+    # Visual Search
+    path('visual-search/', visual_search_view, name='visual-search'),
     
     # Router URLs
     path('', include(router.urls)),

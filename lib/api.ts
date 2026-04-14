@@ -574,3 +574,35 @@ export const walletAPI = {
         }[]>('/wallet/transactions/');
     },
 };
+
+// Visual Search API
+export const visualSearchAPI = {
+    async searchByImage(file: File) {
+        const formData = new FormData();
+        formData.append('image', file);
+
+        const token = getAuthToken();
+        const headers: Record<string, string> = {};
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        const url = `${API_BASE}/visual-search/`;
+        console.log(`[Frontend API Request] POST ${url}`);
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers,
+            body: formData,
+        });
+
+        console.log(`[Frontend API Response] ${url} Status: ${response.status}`);
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ error: 'فشل البحث البصري' }));
+            throw new Error(errorData.error || 'فشل البحث البصري');
+        }
+
+        return response.json();
+    },
+};

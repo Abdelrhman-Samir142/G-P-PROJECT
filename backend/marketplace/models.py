@@ -289,3 +289,35 @@ class WalletTransaction(models.Model):
 
     def __str__(self):
         return f"{self.user.username} | {self.transaction_type} | {self.amount}"
+
+
+class ProductVisualEmbedding(models.Model):
+    """
+    Stores a CLIP image embedding for each product's primary image.
+    Used for Visual Search (find similar products by uploading a photo).
+    The vector is stored as a JSON array of 512 floats (CLIP ViT-B/32).
+    """
+    product = models.OneToOneField(
+        Product,
+        on_delete=models.CASCADE,
+        related_name='visual_embedding',
+        primary_key=True,
+    )
+    embedding = models.JSONField(
+        help_text="512-dim CLIP image embedding vector as a list of floats"
+    )
+    image_url = models.URLField(
+        max_length=500,
+        help_text="URL of the image that was embedded"
+    )
+    model_name = models.CharField(max_length=100, default='openai/clip-vit-base-patch32')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'product_visual_embeddings'
+        verbose_name = 'Product Visual Embedding'
+        verbose_name_plural = 'Product Visual Embeddings'
+
+    def __str__(self):
+        return f"Visual Embedding for Product #{self.product_id}"

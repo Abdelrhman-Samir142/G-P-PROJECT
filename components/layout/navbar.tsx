@@ -113,6 +113,7 @@ export function Navbar() {
   const appLinks = [
     { name: dict.nav.shop,       href: '/dashboard', icon: <LayoutDashboard size={16} /> },
     { name: dict.nav.auctions,   href: '/auctions',  icon: <Gavel size={16} /> },
+    { name: 'البحث بالصورة',     href: '/visual-search', icon: <Search size={16} /> },
     ...(user ? [
       { name: 'الوكيل الذكي', href: '/agent',  icon: <Bot size={16} /> },
       { name: 'الرسائل',      href: '/messages', icon: <MessageCircle size={16} /> }
