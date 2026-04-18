@@ -207,12 +207,12 @@ def classify_image(image_path: str) -> dict:
     is_url = image_path.startswith("http://") or image_path.startswith("https://")
 
     try:
-        from gradio_client import Client, handle_file
+        from gradio_client import Client, file
         
         # Connect to HF Space API
         client = Client(hf_space_url)
         
-        target_file = handle_file(image_path)
+        target_file = file(image_path)
         
         result_class = client.predict(
             image=target_file,
