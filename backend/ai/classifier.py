@@ -189,7 +189,13 @@ def _lookup_category(class_name: str):
 def classify_image(image_path: str) -> dict:
     """
     Run inference on an image via an external Hugging Face Space API.
+    Uses direct HTTP requests to the Gradio REST API for maximum compatibility.
     """
+    import requests
+    import base64
+    import json
+    import mimetypes
+
     fallback = {
         'category': 'other',
         'category_label': 'أخرى',
@@ -197,51 +203,86 @@ def classify_image(image_path: str) -> dict:
         'detected_class': None,
     }
 
-    hf_space_url = os.getenv("HF_SPACE_URL")
+    hf_space_url = os.getenv("HF_SPACE_URL", "").rstrip("/")
     if not hf_space_url:
         logger.error("HF_SPACE_URL is not set.")
         return fallback
 
-    # If the image path is actually a Cloudinary URL, gradio_client can handle it directly!
-    # Sometimes image.path raises NotImplementedError, so we fallback to image.url
     is_url = image_path.startswith("http://") or image_path.startswith("https://")
 
     try:
-        from gradio_client import Client, file
-        
-        # Connect to HF Space API
-        client = Client(hf_space_url)
-        
-        target_file = file(image_path)
-        
-        # Use predict without the leading slash if it fails, 
-        # but usually it's just 'predict' or 'predict_1' etc.
-        # Interface default is usually 'predict'
-        result = client.predict(
-            image=target_file,
-            api_name="/predict"
-        )
-        
-        # Gradio Interface with multiple outputs returns a list/tuple
-        # outputs=[gr.Image, gr.Text] -> result is [image_path, text]
-        if isinstance(result, (list, tuple)) and len(result) >= 2:
-            best_class = str(result[1]).strip()
+        # ── Step 1: Upload image to the HF Space ──
+        upload_url = f"{hf_space_url}/upload"
+
+        if is_url:
+            # Download the image first (e.g. from Cloudinary)
+            img_resp = requests.get(image_path, timeout=30)
+            img_resp.raise_for_status()
+            img_bytes = img_resp.content
+            filename = "image.jpg"
         else:
-            best_class = str(result).strip()
+            with open(image_path, "rb") as f:
+                img_bytes = f.read()
+            filename = os.path.basename(image_path)
+
+        mime_type = mimetypes.guess_type(filename)[0] or "image/jpeg"
+        files = {"files": (filename, img_bytes, mime_type)}
         
+        upload_resp = requests.post(upload_url, files=files, timeout=60)
+        upload_resp.raise_for_status()
+        uploaded_files = upload_resp.json()
+        
+        # uploaded_files is a list of file paths on the server
+        if not uploaded_files or len(uploaded_files) == 0:
+            logger.error("HF Space upload returned empty result")
+            return fallback
+        
+        uploaded_path = uploaded_files[0]  # server-side path
+        print(f"[AI] 📤 Uploaded to HF Space: {uploaded_path}")
+
+        # ── Step 2: Call the /api/predict endpoint ──
+        predict_url = f"{hf_space_url}/api/predict"
+        payload = {
+            "data": [
+                {"path": uploaded_path, "meta": {"_type": "gradio.FileData"}}
+            ]
+        }
+
+        predict_resp = requests.post(
+            predict_url,
+            json=payload,
+            headers={"Content-Type": "application/json"},
+            timeout=120,
+        )
+        predict_resp.raise_for_status()
+        result_json = predict_resp.json()
+
+        print(f"[AI] 📥 HF Space raw response: {json.dumps(result_json, ensure_ascii=False)[:500]}")
+
+        # ── Step 3: Extract the class name from response ──
+        # Gradio returns {"data": [output1, output2, ...]}
+        data = result_json.get("data", [])
+        
+        best_class = "other"
+        if len(data) >= 2:
+            # outputs=[gr.Image, gr.Text] -> data[1] is the text
+            best_class = str(data[1]).strip()
+        elif len(data) == 1:
+            best_class = str(data[0]).strip()
+
         print(f"[AI] 🔍 Hugging Face API returned YOLO class: '{best_class}'")
-        
+
         arabic_label = _lookup_category(best_class)
-        
+
         if not arabic_label:
             logger.warning(f"Unknown class predicted: {best_class}")
-            # Try to see if the string itself contains a known class
+            # Try fuzzy match
             for k in CATEGORY_MAP.keys():
                 if k.lower() in best_class.lower():
                     arabic_label = CATEGORY_MAP[k]
                     best_class = k
                     break
-            
+
             if not arabic_label:
                 return fallback
 
@@ -251,12 +292,20 @@ def classify_image(image_path: str) -> dict:
         return {
             'category': category_id,
             'category_label': arabic_label,
-            'confidence': 0.95, # Mock confidence for external API
+            'confidence': 0.95,
             'detected_class': best_class,
         }
 
+    except requests.exceptions.Timeout:
+        logger.error("HF Space request timed out - Space may be sleeping")
+        return fallback
+    except requests.exceptions.HTTPError as e:
+        logger.error(f"HF Space HTTP error: {e.response.status_code} - {e.response.text[:200]}")
+        return fallback
     except Exception as e:
         logger.error(f"Hugging Face inference error: {e}")
+        import traceback
+        traceback.print_exc()
         return fallback
 
 
