@@ -37,6 +37,7 @@ def rag_query_view(request):
     }
     """
     query = request.data.get('query', '').strip()
+    history = request.data.get('history', [])  # Optional: last 3 messages
 
     if not query:
         return Response(
@@ -51,7 +52,7 @@ def rag_query_view(request):
         )
 
     try:
-        result = rag_query(query, user=request.user)
+        result = rag_query(query, user=request.user, history=history)
         return Response(result, status=status.HTTP_200_OK)
     except Exception as e:
         logger.error(f"[RAG/View] Unexpected error: {e}")

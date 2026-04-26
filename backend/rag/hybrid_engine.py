@@ -134,32 +134,39 @@ def _enrich_with_seller_info(items: list) -> list:
 
 # ── Final Answer Synthesis ─────────────────────────────────
 
-SYNTHESIS_PROMPT = """You are a smart assistant for "4sale" - an Egyptian marketplace for scrap and used items.
+SYNTHESIS_PROMPT = """أنت مساعد ذكي لمنصة "4Sale" - سوق مصري لبيع وشراء المستعمل والخردة.
 
-Your job: take search results and summarize them for the user in Egyptian Arabic (3ammeya).
+شغلتك: تاخد نتايج البحث وتلخصها للمستخدم بالعامية المصرية بطريقة ودودة ومفيدة.
 
-RULES:
-1. Reply in Egyptian Arabic colloquial (not formal Arabic).
-2. Never make up information - only use what's in the results.
-3. If results are empty, say "مفيش نتايج دلوقتي تطابق اللي بتدور عليه. جرب تدور بكلمات تانية."
-4. Suggest an appropriate action (view_listing, place_bid, compare_prices, set_agent).
-5. When seller info is available (rating, trust_score), mention it naturally.
-   For example: "البائع تقييمه 4.5 نجمة وموثوق بنسبة 90%" or "بائع جديد"
-6. Highlight products from highly-rated sellers (rating >= 4) as "recommended".
+القواعد:
+1. اتكلم عامية مصرية طبيعية (مش فصحى). مثال: "لقيتلك" مش "وجدت لك".
+2. متألفش معلومات أبداً - استخدم بس اللي في النتايج.
+3. لو مفيش نتايج: "مش لاقي حاجة تطابق اللي بتدور عليه دلوقتي. جرب بكلمات تانية 🔍"
+4. اذكر السعر والحالة والمكان لكل منتج بشكل طبيعي.
+5. لو البائع تقييمه عالي (rating >= 4): اذكر "بائع موثوق ⭐"
+6. لو البائع تقييمه أقل من 3: متذكرش التقييم.
+7. لو فيه مزاد: قول "عليه مزاد!" أو "مزاد نشط 🔥"
+8. رتب المنتجات من الأنسب للأقل.
+9. خلي الملخص مختصر ومفيد (3-5 جمل).
+10. اقترح action مناسب بناءً على السياق:
+    - منتج واحد بس → "view_listing"
+    - مزاد → "place_bid"
+    - أكتر من 3 منتجات بأسعار مختلفة → "compare_prices"
+    - مفيش نتايج كويسة → "set_agent"
 
-Reply in JSON ONLY (no extra text):
+الرد يكون JSON فقط:
 {
-  "summary": "Egyptian Arabic summary of results with seller trust info",
-  "items": [list of product IDs],
+  "summary": "ملخص بالعامية المصرية",
+  "items": [قائمة IDs المنتجات],
   "suggested_action": "view_listing | place_bid | compare_prices | set_agent"
 }"""
 
 
-def synthesise_answer(query: str, merged_items: list) -> dict:
+def synthesise_answer(query: str, merged_items: list, history: list = None) -> dict:
     """Use Gemini to generate a final Egyptian-Arabic answer from merged results."""
     if not merged_items:
         return {
-            "summary": "mafesh nata2eg delwa2ty tTabe2 elly btdawwar 3aleeh. garrab tdawwar bkelmat tanya.",
+            "summary": "مش لاقي حاجة تطابق اللي بتدور عليه دلوقتي. جرب بكلمات تانية 🔍",
             "items": [],
             "suggested_action": "set_agent",
         }
@@ -192,12 +199,24 @@ def synthesise_answer(query: str, merged_items: list) -> dict:
             api_key=api_key,
             base_url="https://api.groq.com/openai/v1",
         )
+        # Build messages with optional conversation history
+        messages = [
+            {"role": "system", "content": SYNTHESIS_PROMPT},
+        ]
+        
+        # Add last 3 conversation messages for context
+        if history:
+            for msg in history[-3:]:
+                role = msg.get('role', 'user')
+                content = msg.get('content', '')
+                if role in ('user', 'assistant') and content:
+                    messages.append({"role": role, "content": content})
+        
+        messages.append({"role": "user", "content": f"سؤال المستخدم: {query}\n\nالنتايج:\n{context}"})
+        
         response = _client.chat.completions.create(
             model="llama-3.3-70b-versatile",
-            messages=[
-                {"role": "system", "content": SYNTHESIS_PROMPT},
-                {"role": "user", "content": f"User question: {query}\n\nResults:\n{context}"},
-            ],
+            messages=messages,
             temperature=0.3,
             max_tokens=600,
         )
@@ -213,7 +232,7 @@ def synthesise_answer(query: str, merged_items: list) -> dict:
             for item in merged_items
         ]
         return {
-            "summary": f"la2etlak {len(merged_items)} nateega. etfaddal boss 3alehom.",
+            "summary": f"لقيتلك {len(merged_items)} نتيجة. اتفضل بص عليهم.",
             "items": [i for i in item_ids if i],
             "suggested_action": "view_listing",
         }
@@ -221,7 +240,7 @@ def synthesise_answer(query: str, merged_items: list) -> dict:
 
 # ── Main Entry Point ───────────────────────────────────────
 
-def rag_query(query: str, user=None) -> dict:
+def rag_query(query: str, user=None, history: list = None) -> dict:
     """
     Full RAG pipeline:
     1. Parallel retrieval (vector + SQL)
@@ -241,13 +260,13 @@ def rag_query(query: str, user=None) -> dict:
         vector_count = retrieval["vector_count"]
         sql_count = retrieval["sql_count"]
 
-        answer = synthesise_answer(query, merged)
+        answer = synthesise_answer(query, merged, history=history)
 
     except Exception as e:
         logger.error(f"[RAG] Pipeline error: {e}")
         error_msg = str(e)
         answer = {
-            "summary": "Hasal moshkela te2neya. Garrab tany ba3d shwaya.",
+            "summary": "حصلت مشكلة تقنية. جرب تاني بعد شوية.",
             "items": [],
             "suggested_action": "view_listing",
         }

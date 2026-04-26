@@ -105,7 +105,12 @@ export function FloatingBotWidget() {
         setLoading(true);
 
         try {
-            const result = await ragAPI.query(query);
+            // Build history from last 3 messages for context
+            const chatHistory = messages.slice(-3).map(m => ({
+                role: m.role,
+                content: m.content,
+            }));
+            const result = await ragAPI.query(query, chatHistory);
 
             let products: any[] = [];
             if (result.answer.items && result.answer.items.length > 0) {

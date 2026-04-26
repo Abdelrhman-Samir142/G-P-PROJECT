@@ -530,7 +530,7 @@ export const notificationsAPI = {
 
 // RAG Smart Search API
 export const ragAPI = {
-    async query(queryText: string) {
+    async query(queryText: string, history?: { role: string; content: string }[]) {
         return apiFetch<{
             answer: {
                 summary: string;
@@ -545,7 +545,7 @@ export const ragAPI = {
             };
         }>('/rag/query/', {
             method: 'POST',
-            body: JSON.stringify({ query: queryText }),
+            body: JSON.stringify({ query: queryText, history: history || [] }),
         });
     },
 };

@@ -222,7 +222,12 @@ def run_auto_bidding(auction, detected_item):
     """
     from decimal import Decimal
     
-    BID_INCREMENT = Decimal('50.00')  # Each incremental outbid step
+    # Dynamic bid increment: 5% of current bid (min 50, max 500 EGP)
+    def calc_increment(current):
+        inc = max(Decimal('50.00'), min(current * Decimal('0.05'), Decimal('500.00')))
+        return inc.quantize(Decimal('1.00'))  # Round to nearest pound
+    
+    BID_INCREMENT = calc_increment(auction.current_bid)
     
     seller = auction.product.owner
     starting_bid = auction.starting_bid
@@ -501,7 +506,12 @@ def _notify_agent_insufficient_balance(agent, auction, amount):
     )
 
 
-BID_INCREMENT = 50  # Agent counter-bid increment in EGP
+# Dynamic bid increment calculation
+def _calc_bid_increment(current_bid):
+    """5% of current bid, min 50 EGP, max 500 EGP."""
+    from decimal import Decimal
+    inc = max(Decimal('50.00'), min(Decimal(str(current_bid)) * Decimal('0.05'), Decimal('500.00')))
+    return inc.quantize(Decimal('1.00'))
 
 
 def agent_counter_bid_async(auction_id, manual_bidder_id):
@@ -558,7 +568,7 @@ def agent_counter_bid(auction, manual_bidder):
     # ---------------------------
 
     for agent in matching_agents:
-        counter_amount = auction.current_bid + BID_INCREMENT
+        counter_amount = auction.current_bid + _calc_bid_increment(auction.current_bid)
 
         if counter_amount > agent.max_budget:
             logger.info(

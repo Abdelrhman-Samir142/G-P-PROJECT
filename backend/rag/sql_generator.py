@@ -17,7 +17,6 @@ from django.db import connection
 logger = logging.getLogger(__name__)
 
 # ── SQL Safety ──────────────────────────────────────────────
-ALLOWED_TABLES = {'products', 'auctions', 'bids', 'product_images'}
 
 FORBIDDEN_KEYWORDS = [
     'DROP', 'DELETE', 'UPDATE', 'INSERT', 'ALTER', 'TRUNCATE',
@@ -28,15 +27,15 @@ FORBIDDEN_KEYWORDS = [
 
 MAX_ROWS = 15
 
+ALLOWED_TABLES = {'marketplace_product', 'marketplace_auction', 'marketplace_bid', 'marketplace_productimage'}
+
 
 def validate_sql(sql: str) -> tuple[bool, str]:
     """Validate that the generated SQL is safe to execute."""
     if not sql or not sql.strip():
         return False, "Empty SQL"
 
-    # Strip trailing semicolon (LLMs often add it) before validation
     sql = sql.strip().rstrip(';').strip()
-
     sql_upper = sql.upper()
 
     if not sql_upper.startswith('SELECT'):
@@ -65,14 +64,14 @@ def validate_sql(sql: str) -> tuple[bool, str]:
 # ── LLM ────────────────────────────────────────────────────
 
 DB_SCHEMA = """
-You have access to these PostgreSQL tables:
+You have access to these PostgreSQL tables (Django-managed):
 
-TABLE products (
+TABLE marketplace_product (
     id SERIAL PRIMARY KEY,
     title VARCHAR(200),
     description TEXT,
     price DECIMAL(10,2),       -- EGP (Egyptian Pounds)
-    category VARCHAR(20),      -- 'scrap_metals','electronics','furniture','cars','real_estate','books','other'
+    category VARCHAR(20),      -- 'scrap_metals','electronics','appliances','furniture','cars','real_estate','books','other'
     condition VARCHAR(10),     -- 'new','like-new','good','fair'
     status VARCHAR(10),        -- 'active','sold','pending','inactive'
     location VARCHAR(200),
@@ -82,9 +81,9 @@ TABLE products (
     created_at TIMESTAMP WITH TIME ZONE
 )
 
-TABLE auctions (
+TABLE marketplace_auction (
     id SERIAL PRIMARY KEY,
-    product_id INTEGER REFERENCES products(id),
+    product_id INTEGER REFERENCES marketplace_product(id),
     starting_bid DECIMAL(10,2),
     current_bid DECIMAL(10,2),
     highest_bidder_id INTEGER,
@@ -93,26 +92,34 @@ TABLE auctions (
     is_active BOOLEAN
 )
 
-TABLE bids (
+TABLE marketplace_bid (
     id SERIAL PRIMARY KEY,
-    auction_id INTEGER REFERENCES auctions(id),
+    auction_id INTEGER REFERENCES marketplace_auction(id),
     bidder_id INTEGER,
     amount DECIMAL(10,2),
     created_at TIMESTAMP WITH TIME ZONE
 )
 
-Egyptian slang mappings:
-- "تلاجة"/"تلاجه" = refrigerator (category='electronics')
-- "غسالة"/"غساله" = washing_machine (category='electronics')
-- "خردة"/"خرده" = scrap (category='scrap_metals')
-- "عربية"/"سيارة" = car (category='cars')
-- "لابتوب"/"لاب" = laptop
-- "تكييف" = ac_unit
-- "لقطة"/"رخيصة" = cheap/bargain = low price
-- "نص اتوماتيك" = half-automatic washing machine
+Egyptian slang → SQL mappings:
+- "تلاجة"/"تلاجه"/"فريزر"/"ديب فريزر" → category='appliances'
+- "غسالة"/"غساله"/"نص أوتوماتيك"/"فول أوتوماتيك" → category='appliances'
+- "تكييف"/"مكيف"/"تكيف" → category='appliances'
+- "بوتاجاز"/"فرن"/"كوكر" → category='appliances'
+- "مكواة"/"مكنسة"/"خلاط"/"سخان"/"فلتر مياه" → category='appliances'
+- "خردة"/"خرده"/"حديد"/"نحاس"/"ألومنيوم"/"موتور" → category='scrap_metals'
+- "عربية"/"عربيه"/"سيارة" → category='cars'
+- "لابتوب"/"لاب"/"كمبيوتر"/"بلايستيشن" → category='electronics'
+- "موبايل"/"تليفون"/"شاشة"/"تلفزيون" → category='electronics'
+- "كنبة"/"كنبه"/"سرير"/"ترابيزة"/"دولاب"/"نيش"/"سفرة" → category='furniture'
+- "شقة"/"عقار"/"مكتب"/"محل" → category='real_estate'
+- "كتاب"/"كتب" → category='books'
+- "لقطة"/"رخيص"/"رخيصة"/"أرخص" → ORDER BY price ASC
+- "أغلى"/"غالي" → ORDER BY price DESC
+- "أحدث"/"جديد" → ORDER BY created_at DESC
+- "أكتر مشاهدة" → ORDER BY views_count DESC
 """
 
-SYSTEM_PROMPT = f"""You are a SQL expert for "4sale", an Egyptian scrap & used-items marketplace.
+SYSTEM_PROMPT = f"""You are a SQL expert for "4Sale", an Egyptian scrap & used-items marketplace.
 Convert the user's question (often Egyptian Arabic slang) into a single PostgreSQL SELECT.
 
 {DB_SCHEMA}
@@ -121,10 +128,12 @@ RULES:
 1. Output ONLY raw SQL. No markdown, no explanation, no backticks.
 2. Always include WHERE status = 'active' unless user asks for sold/history.
 3. If user mentions price/budget, add price filters.
-4. If user asks about auctions, JOIN auctions and filter is_active=true.
+4. If user asks about auctions, JOIN marketplace_auction and filter is_active=true.
 5. LIMIT 15 always.
-6. Use ILIKE for Arabic text searches.
+6. Use ILIKE for Arabic text searches on title and description.
 7. NEVER use DELETE, UPDATE, INSERT, DROP, or any write operation.
+8. Always use the full table name with 'marketplace_' prefix.
+9. For location searches, use ILIKE with the city/governorate name.
 """
 
 

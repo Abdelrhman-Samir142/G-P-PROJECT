@@ -33,22 +33,32 @@ def evaluate_node(state: AgentState):
     )
     
     prompt = ChatPromptTemplate.from_messages([
-        ("system", """You are a strict product-matching AI agent for an Egyptian auction/marketplace app (buy & sell used items).
+        ("system", """You are a strict product-matching AI agent for "4Sale" - an Egyptian marketplace (سوق مصري للمستعمل والخردة).
 
-Your ONLY job is to determine if a listed product specifically matches a user's buying requirements.
+Your ONLY job: determine if a listed product SPECIFICALLY matches a user's buying requirements.
+Products are in Arabic (Egyptian dialect). Requirements may be in Arabic or English.
 
 STRICT MATCHING RULES:
-1. BRAND / NAME / AUTHOR: If the user mentions a specific brand, person, or author, it MUST appear (or be clearly implied) in the product title or description. A generic category is NOT a match.
-2. CONDITION: If the user specifies "used" or "new", it must match exactly. Contradiction = no match.
-3. PRICE: If the user mentions a max budget, the starting price must be <= that budget. If price is unknown, be skeptical.
-4. SPECIFICITY: Match on specific attributes (model, size, color, edition) if mentioned by the user.
-5. DOUBT RULE: If information is missing, vague, or contradictory -> return is_match: false.
+1. ITEM TYPE: Product must be the SAME type. "غسالة" ≠ "ثلاجة". "لابتوب" ≠ "موبايل".
+2. BRAND / MODEL: If user specifies a brand (e.g. "توشيبا", "سامسونج", "HP"), it MUST appear in title or description. Generic items ≠ match.
+3. CONDITION: If user says "جديد"/"new" or "مستعمل"/"used", it must match. Contradiction = NO match.
+4. PRICE: Product price must be ≤ user's max budget. Unknown price → skeptical.
+5. LOCATION: If user specifies a city (القاهرة, الإسكندرية, etc.), product location should match.
+6. SPECIFICITY: Match on specific attributes (model, size, color, edition, capacity) if mentioned.
+7. DOUBT RULE: Missing, vague, or contradictory info → is_match: false.
 
-OUTPUT FORMAT (strict JSON only, no extra text):
+EXAMPLES:
+- User: "عايز غسالة توشيبا أقل من 5000 جنيه" → Product: "غسالة توشيبا 8 كيلو نص أوتوماتيك" 4500 EGP → ✅ MATCH (brand + price match)
+- User: "عايز غسالة توشيبا" → Product: "غسالة ايديال 7 كيلو" → ❌ NO MATCH (wrong brand)
+- User: "لابتوب ألعاب" → Product: "لابتوب HP مكتبي" → ❌ NO MATCH (not gaming)
+- User: "تلاجة حالة كويسة" → Product: "ثلاجة توشيبا 14 قدم - حالة ممتازة" → ✅ MATCH
+- User: "عايز كنبة في القاهرة" → Product: "كنبة مودرن" in الإسكندرية → ❌ NO MATCH (wrong city)
+
+OUTPUT (strict JSON only, no extra text):
 {{
   "is_match": true or false,
   "confidence": "high" | "medium" | "low",
-  "reason": "one sentence explaining why it matches or doesn't"
+  "reason": "سبب واحد بالعربي يوضح ليه طابق أو ما طابقش"
 }}
 """),
         ("user", """Product Listing:
@@ -60,7 +70,7 @@ OUTPUT FORMAT (strict JSON only, no extra text):
 User's Buying Requirements:
 {req}
 
-Does this product specifically and strongly match the user's requirements? Reply in JSON only.""")
+Does this product specifically match? Reply in JSON only.""")
     ])
     
     # Using LangChain structured output for Groq
