@@ -16,6 +16,7 @@ from rag.embeddings import generate_query_embedding
 logger = logging.getLogger(__name__)
 
 DEFAULT_TOP_K = 15
+MIN_SIMILARITY = 0.35  # Discard results below this threshold
 
 
 def _cosine_similarity(a: np.ndarray, b: np.ndarray) -> float:
@@ -34,7 +35,7 @@ def vector_search(query_text: str, top_k: int = DEFAULT_TOP_K) -> list[dict]:
     using cosine similarity computed in Python.
 
     Returns a list of dicts with product info + similarity score.
-    Only returns active products.
+    Only returns active products ABOVE the minimum similarity threshold.
     """
     from rag.models import ProductEmbedding
 
@@ -61,7 +62,9 @@ def vector_search(query_text: str, top_k: int = DEFAULT_TOP_K) -> list[dict]:
         try:
             product_vec = np.array(pe.embedding, dtype=np.float32)
             sim = _cosine_similarity(query_vec, product_vec)
-            scored.append((sim, pe))
+            # Only keep results above minimum similarity threshold
+            if sim >= MIN_SIMILARITY:
+                scored.append((sim, pe))
         except Exception:
             continue
 
@@ -86,5 +89,8 @@ def vector_search(query_text: str, top_k: int = DEFAULT_TOP_K) -> list[dict]:
             'source': 'vector',
         })
 
-    logger.info(f"[RAG/Vector] Found {len(results)} results for: {query_text[:50]}")
+    logger.info(
+        f"[RAG/Vector] Found {len(results)} results (above {MIN_SIMILARITY} threshold) "
+        f"for: {query_text[:50]}"
+    )
     return results
