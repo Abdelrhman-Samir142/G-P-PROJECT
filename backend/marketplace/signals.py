@@ -49,12 +49,13 @@ def _run_discovery_in_background(product_id):
 @receiver(post_save, sender='marketplace.Product')
 def trigger_agent_discovery(sender, instance, created, **kwargs):
     """
-    When a NEW active, non-auction product is created,
-    check if any agents are interested in it.
+    Trigger agent discovery for non-auction products when:
+    1. A NEW active, non-auction product is created with detected_item already set, OR
+    2. An existing product's detected_item is updated (YOLO runs after creation).
+    
+    Case 2 is the common path: ProductCreateSerializer creates the product first,
+    then runs YOLO classification, then calls product.save(update_fields=['detected_item']).
     """
-    if not created:
-        return
-
     if instance.status != 'active':
         return
 
@@ -64,7 +65,13 @@ def trigger_agent_discovery(sender, instance, created, **kwargs):
     if not instance.detected_item:
         return  # No YOLO classification = can't match agents
 
-    logger.info(f"[Marketplace/Signal] New product #{instance.id} detected as '{instance.detected_item}', triggering agent discovery")
+    # Check update_fields to avoid infinite loops — only trigger when
+    # detected_item was actually part of the update (or on creation)
+    update_fields = kwargs.get('update_fields')
+    if not created and update_fields and 'detected_item' not in update_fields:
+        return  # Unrelated field update, skip
+
+    logger.info(f"[Marketplace/Signal] Product #{instance.id} detected as '{instance.detected_item}', triggering agent discovery")
 
     threading.Thread(
         target=_run_discovery_in_background,

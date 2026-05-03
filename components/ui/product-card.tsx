@@ -12,6 +12,7 @@ import { useAuth } from '@/components/providers/auth-provider';
 const categoryLabels: Record<string, { label: string; color: string; bg: string }> = {
     scrap_metals: { label: 'خردة ومعادن', color: 'text-emerald-700 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-800' },
     electronics: { label: 'إلكترونيات وأجهزة', color: 'text-blue-700 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800' },
+    appliances: { label: 'أجهزة منزلية', color: 'text-cyan-700 dark:text-cyan-400', bg: 'bg-cyan-50 dark:bg-cyan-900/30 border-cyan-200 dark:border-cyan-800' },
     furniture: { label: 'أثاث وديكور', color: 'text-amber-700 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/30 border-amber-200 dark:border-amber-800' },
     cars: { label: 'سيارات للبيع', color: 'text-red-700 dark:text-red-400', bg: 'bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800' },
     real_estate: { label: 'عقارات', color: 'text-purple-700 dark:text-purple-400', bg: 'bg-purple-50 dark:bg-purple-900/30 border-purple-200 dark:border-purple-800' },

@@ -64,6 +64,8 @@ export default function AuctionsPage() {
     const [auctions, setAuctions] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const INITIAL_COUNT = 6;
+    const [showAll, setShowAll] = useState(false);
 
     const fetchAuctions = useCallback(async () => {
         try {
@@ -97,6 +99,8 @@ export default function AuctionsPage() {
         return auction.product_title?.toLowerCase().includes(q);
     });
 
+    const visibleAuctions = showAll ? filteredAuctions : filteredAuctions.slice(0, INITIAL_COUNT);
+
     if (authLoading || !user) {
         return (
             <div className="flex min-h-screen items-center justify-center">
@@ -110,44 +114,53 @@ export default function AuctionsPage() {
             <Navbar />
             <main className="pt-24 pb-12 min-h-screen px-4 sm:px-6 lg:px-8">
                 <div className="max-w-7xl mx-auto">
-                    <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-8">
+                    {/* ── Page Header (same layout as dashboard) ── */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-10"
+                    >
                         <div>
-                            <h2 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
-                                <div className="bg-gradient-to-r from-orange-500 to-red-500 p-2 rounded-xl text-white">
+                            <h2 className="text-2xl md:text-3xl font-black flex items-center gap-3">
+                                <div className="bg-gradient-to-r from-orange-500 to-red-500 p-2.5 rounded-xl text-white shadow-md">
                                     <Gavel size={24} />
                                 </div>
-                                المزادات النشطة
+                                المزادات
                             </h2>
-                            <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm">
+                            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
                                 زايد على المنتجات المميزة واحصل على أفضل الأسعار
                             </p>
                         </div>
 
-                        <div className="flex items-center gap-3">
+                        <div className="flex gap-2 items-center">
+                            {/* Search */}
+                            <div className="flex gap-2 max-w-sm w-full">
+                                <input
+                                    type="text"
+                                    placeholder="ابحث في المزادات..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && fetchAuctions()}
+                                    className="flex-1 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 bg-white dark:bg-slate-800 transition-all"
+                                />
+                                <button
+                                    onClick={fetchAuctions}
+                                    className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white p-3 rounded-xl transition-all"
+                                >
+                                    <Search size={20} />
+                                </button>
+                            </div>
+
                             <Link href="/sell">
-                                <button className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm transition-all shadow-md hover:shadow-lg flex items-center gap-2">
+                                <button
+                                    className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-4 py-3 rounded-xl font-bold text-sm shadow-sm flex items-center gap-2 whitespace-nowrap hover:shadow-md transition-all"
+                                >
                                     <Plus size={18} />
-                                    أضف مزاد جديد
+                                    أضف مزاد
                                 </button>
                             </Link>
                         </div>
-
-                        <div className="flex gap-2 max-w-md w-full">
-                            <input
-                                type="text"
-                                placeholder="ابحث في المزادات..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="flex-1 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 bg-white dark:bg-slate-800 transition-all"
-                            />
-                            <button
-                                onClick={fetchAuctions}
-                                className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white p-3 rounded-xl transition-colors shadow-sm hover:shadow-md"
-                            >
-                                <Search size={20} />
-                            </button>
-                        </div>
-                    </div>
+                    </motion.div>
 
                     {loading && (
                         <div className="flex items-center justify-center py-20">
@@ -170,7 +183,7 @@ export default function AuctionsPage() {
                     {!loading && !error && (
                         <>
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {filteredAuctions.map((auction) => (
+                                {visibleAuctions.map((auction) => (
                                     <motion.div
                                         key={auction.id}
                                         initial={{ opacity: 0, y: 20 }}
@@ -238,6 +251,20 @@ export default function AuctionsPage() {
                                     </motion.div>
                                 ))}
                             </div>
+
+                            {/* Show All button - below grid */}
+                            {filteredAuctions.length > INITIAL_COUNT && (
+                                <div className="flex justify-center mt-8">
+                                    <motion.button
+                                        whileHover={{ scale: 1.03 }}
+                                        whileTap={{ scale: 0.97 }}
+                                        onClick={() => setShowAll(!showAll)}
+                                        className="bg-orange-50 hover:bg-orange-100 dark:bg-orange-900/20 dark:hover:bg-orange-900/40 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800 px-8 py-3 rounded-xl font-bold text-sm transition-all shadow-sm"
+                                    >
+                                        {showAll ? 'عرض أقل ▲' : `عرض الكل (${filteredAuctions.length}) ▼`}
+                                    </motion.button>
+                                </div>
+                            )}
 
                             {filteredAuctions.length === 0 && (
                                 <div className="text-center py-20">

@@ -695,7 +695,7 @@ def get_general_stats(request):
     """
     total_users = User.objects.count()
     products_sold = Product.objects.filter(status='sold').count()
-    scrap_count = Product.objects.filter(category='scrap').count()
+    scrap_count = Product.objects.filter(category='scrap_metals').count()
     
     # Calculate active governorates/cities from profiles and products
     user_locations = UserProfile.objects.values_list('city', flat=True).distinct()

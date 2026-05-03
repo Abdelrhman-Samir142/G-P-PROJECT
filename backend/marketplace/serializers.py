@@ -274,24 +274,28 @@ def run_auto_bidding(auction, detected_item):
                 "product_desc": product.description,
                 "product_condition": product.condition,
                 "product_price": str(product.price),
+                "agent_max_budget": str(agent.max_budget),
                 "agent_requirements": agent.requirements_prompt,
             })
             
             reason = eval_result.get("reason", "") if isinstance(eval_result, dict) else getattr(eval_result, 'reason', '')
             is_match = eval_result.get("is_match", False) if isinstance(eval_result, dict) else getattr(eval_result, 'is_match', False)
+            decision_type = eval_result.get("decision_type", "") if isinstance(eval_result, dict) else getattr(eval_result, 'decision_type', '')
 
             if is_match:
                 logger.info(f"[AgentGraph] MATCH: {reason}")
                 # Store reasoning on the agent object temporarily for notification
                 agent._ai_reasoning = reason
+                agent._ai_decision_type = decision_type
                 matching_agents.append(agent)
             else:
-                logger.info(f"[AgentGraph] REJECT: {reason}")
+                logger.info(f"[AgentGraph] REJECT ({decision_type}): {reason}")
                 # Send a rejection notification so the user knows why it didn't bid
-                _notify_agent_rejection(agent, product, reason)
+                _notify_agent_rejection(agent, product, reason, decision_type)
         else:
             # No specific requirements, automatically match
-            agent._ai_reasoning = "طابق الفئة المطلوبة (تلقائي)"
+            agent._ai_reasoning = f"المنتج طابق الفئة المطلوبة — السعر {product.price} جنيه في حدود ميزانيتك {agent.max_budget} جنيه ✅"
+            agent._ai_decision_type = 'matched'
             matching_agents.append(agent)
             
     # Sort agents by budget for the bidding war logic
@@ -357,6 +361,13 @@ def run_auto_bidding(auction, detected_item):
             winner.max_budget,
             runner_up.max_budget + BID_INCREMENT
         )
+        
+        # ── Notify ALL losing agents (3rd place and below) ──
+        # These agents matched the product but lost the bidding war
+        for loser in matching_agents[2:]:
+            _notify_agent_bid(loser, auction, loser.max_budget, detected_item, outbid=True)
+            logger.info(f"[Agent] 📢 Notified losing agent {loser.user.username} (budget {loser.max_budget})")
+        # ─────────────────────────────────────────────────────
         
         # ── Wallet balance checks ──
         # Runner-up bid
@@ -427,22 +438,28 @@ def _notify_agent_bid(agent, auction, amount, detected_item, outbid=False):
     
     item_label = YOLO_CLASS_LABELS.get(detected_item, detected_item)
     product = auction.product
+    reasoning = getattr(agent, '_ai_reasoning', '')
     
     if outbid:
-        title = f"🤖 الوكيل الذكي خسر المزايدة"
+        title = f"🤖 الوكيل خسر المزايدة على: {product.title}"
         message = (
             f"الوكيل الذكي بتاعك زايد بمبلغ {amount} جنيه على \"{product.title}\" ({item_label}) "
-            f"لكن فيه مزايد تاني كسب. ميزانيتك القصوى كانت {agent.max_budget} جنيه."
+            f"لكن فيه مزايد تاني كسب بمبلغ أعلى.\n"
+            f"ميزانيتك القصوى: {agent.max_budget} جنيه."
         )
     else:
-        title = f"🤖 الوكيل الذكي زايد بنجاح!"
+        title = f"✅ الوكيل زايد بنجاح على: {product.title}"
         message = (
-            f"الوكيل الذكي بتاعك لسه حاطط مزايدة بقيمة {amount} جنيه "
-            f"على \"{product.title}\" ({item_label})! ✅"
+            f"الوكيل الذكي بتاعك حطّ مزايدة بقيمة {amount} جنيه "
+            f"على \"{product.title}\" ({item_label}).\n"
+            f"سعر المنتج: {product.price} جنيه | ميزانيتك: {agent.max_budget} جنيه"
         )
     
+    # Add AI reasoning to the visible message
+    if reasoning:
+        message += f"\n\n📋 سبب القرار: {reasoning}"
+    
     # Create notification record
-    reasoning = getattr(agent, '_ai_reasoning', '')
     Notification.objects.create(
         user=agent.user,
         title=title,
@@ -450,10 +467,6 @@ def _notify_agent_bid(agent, auction, amount, detected_item, outbid=False):
         related_product=product,
         reasoning=reasoning
     )
-    
-    # Optional: Add reasoning to the message for more clarity
-    if reasoning:
-        message += f"\n\nسبب المزايدة: {reasoning}"
     
     # Also send a chat message via the existing Conversation system
     try:
@@ -465,12 +478,12 @@ def _notify_agent_bid(agent, auction, amount, detected_item, outbid=False):
         Message.objects.create(
             conversation=conversation,
             sender=product.owner,
-            content=message
+            content=f"🤖 {message}"
         )
     except Exception as e:
         logger.error(f"[Agent] Failed to send chat notification: {e}")
 
-def _notify_agent_rejection(agent, product, reason):
+def _notify_agent_rejection(agent, product, reason, decision_type=''):
     """Notify the user that their agent matched the category but was rejected by LLM."""
     # Prevent duplicate rejection notifications for same user+product
     already_notified = Notification.objects.filter(
@@ -481,8 +494,26 @@ def _notify_agent_rejection(agent, product, reason):
     if already_notified:
         return
     
-    title = f"\U0001f916 الوكيل تخطى منتج: {product.title}"
-    message = f"الوكيل وجد منتج من نفس الفئة المطلوبة ولكن لم يزايد عليه بناءً على شروطك."
+    # Build a user-friendly title based on decision type
+    decision_icons = {
+        'price_too_high': '💰',
+        'wrong_brand': '🏷️',
+        'wrong_type': '📦',
+        'wrong_condition': '⚠️',
+        'wrong_location': '📍',
+        'missing_info': 'ℹ️',
+        'partial_match': '🔶',
+    }
+    icon = decision_icons.get(decision_type, '🤖')
+    
+    title = f"{icon} الوكيل تخطى منتج: {product.title[:60]}"
+    
+    # Include the actual AI reason in the visible message
+    message = (
+        f"الوكيل لقى \"{product.title}\" (سعر: {product.price} جنيه) "
+        f"من نفس الفئة المطلوبة لكن قرر ما يزايدش عليه.\n\n"
+        f"📋 السبب: {reason}"
+    )
     
     Notification.objects.create(
         user=agent.user,
@@ -495,14 +526,23 @@ def _notify_agent_rejection(agent, product, reason):
 
 def _notify_agent_insufficient_balance(agent, auction, amount):
     """Notify user that their agent couldn't bid due to insufficient wallet balance."""
+    reasoning = getattr(agent, '_ai_reasoning', '')
+    product = auction.product
+    
+    message = (
+        f'الوكيل الذكي بتاعك لقى "{product.title}" وكان عايز يزايد بمبلغ {amount} جنيه '
+        f'لكن رصيدك في المحفظة مش كفاية.\n'
+        f'اشحن محفظتك عشان الوكيل يقدر يزايد.'
+    )
+    if reasoning:
+        message += f'\n\n📋 تحليل المنتج: {reasoning}'
+    
     Notification.objects.create(
         user=agent.user,
-        title='🤖 الوكيل الذكي لم يستطع المزايدة - رصيد غير كافي',
-        message=(
-            f'الوكيل الذكي بتاعك حاول يزايد بمبلغ {amount} جنيه على "{auction.product.title}" '
-            f'لكن رصيدك في المحفظة غير كافي. اشحن محفظتك عشان الوكيل يقدر يزايد.'
-        ),
-        related_product=auction.product,
+        title='⛔ الوكيل مقدرش يزايد - رصيد غير كافي',
+        message=message,
+        related_product=product,
+        reasoning=reasoning,
     )
 
 
@@ -581,12 +621,16 @@ def agent_counter_bid(auction, manual_bidder):
                 "product_desc": product.description,
                 "product_condition": product.condition,
                 "product_price": str(product.price),
+                "agent_max_budget": str(agent.max_budget),
                 "agent_requirements": agent.requirements_prompt,
             })
             if eval_result.get("is_match"):
                 matching_agents.append(agent)
             else:
-                logger.info(f"[Agent] ❌ {agent.user.username} rejected by LLM")
+                reason = eval_result.get("reason", "")
+                decision_type = eval_result.get("decision_type", "")
+                logger.info(f"[Agent] ❌ {agent.user.username} rejected by LLM ({decision_type}): {reason}")
+                _notify_agent_rejection(agent, product, reason, decision_type)
         else:
             matching_agents.append(agent)
     # ---------------------------
@@ -707,9 +751,9 @@ class ProductCreateSerializer(serializers.ModelSerializer):
                 )
             
             # ── AI Agent Trigger ──────────────────────────────
-            # If this is an auction, run YOLO on the first image
-            # and trigger auto-bidding for matching agents.
-            if auction and uploaded_images:
+            # Run YOLO on the first image for ALL products (auctions + direct-sale)
+            # so detected_item gets set and agents can discover matches.
+            if uploaded_images:
                 try:
                     first_image = product.images.filter(is_primary=True).first()
                     if first_image and first_image.image:
@@ -720,24 +764,38 @@ class ProductCreateSerializer(serializers.ModelSerializer):
                             # Cloud storage (Cloudinary) uses url
                             image_path = first_image.image.url
                             
-                        from ai.classifier import classify_image
+                        from ai.classifier import classify_image, guess_item_from_text
                         result = classify_image(image_path)
                         detected_item = result.get('detected_class')
-                        if detected_item:
-                            # Store on Product for counter-bid lookup
+                        
+                        # Fallback: if YOLO returns 'other' or fails, try to guess from title
+                        if not detected_item or detected_item == 'other':
+                            guessed = guess_item_from_text(product.title)
+                            if guessed:
+                                detected_item = guessed
+                                logger.info(f"[Agent] 💡 YOLO returned other/None. Guessed '{detected_item}' from title.")
+
+                        if detected_item and detected_item != 'other':
+                            # Store on Product for counter-bid lookup & agent discovery
                             product.detected_item = detected_item
                             product.save(update_fields=['detected_item'])
                             logger.info(f"[Agent] 🔍 Detected '{detected_item}' — checking agents...")
-                            # Start background thread for AI evaluation and bidding
-                            threading.Thread(
-                                target=run_auto_bidding_async,
-                                args=(auction.id, detected_item),
-                                daemon=True
-                            ).start()
-                            logger.info(f"[Agent] 🚀 Started background agent thread for '{detected_item}'")
+                            
+                            if auction:
+                                # Auction: Start background thread for AI evaluation and bidding
+                                threading.Thread(
+                                    target=run_auto_bidding_async,
+                                    args=(auction.id, detected_item),
+                                    daemon=True
+                                ).start()
+                                logger.info(f"[Agent] 🚀 Started auto-bidding thread for '{detected_item}'")
+                            # Non-auction products: agent discovery is triggered by
+                            # the post_save signal (trigger_agent_discovery) which
+                            # checks detected_item. Now it will work because we set
+                            # detected_item above for ALL products.
                 except Exception as e:
                     # Agent failure should NOT block product creation
-                    logger.error(f"[Agent] Auto-bidding error (non-blocking): {e}")
+                    logger.error(f"[Agent] Classification/bidding error (non-blocking): {e}")
                     import traceback
                     traceback.print_exc()
             # ──────────────────────────────────────────────────
@@ -1041,18 +1099,20 @@ def run_agent_discovery(product):
                     "product_desc": product.description,
                     "product_condition": product.condition,
                     "product_price": str(product.price),
+                    "agent_max_budget": str(agent.max_budget),
                     "agent_requirements": agent.requirements_prompt,
                 })
 
                 reason = eval_result.get("reason", "") if isinstance(eval_result, dict) else getattr(eval_result, 'reason', '')
                 is_match = eval_result.get("is_match", False) if isinstance(eval_result, dict) else getattr(eval_result, 'is_match', False)
+                decision_type = eval_result.get("decision_type", "") if isinstance(eval_result, dict) else getattr(eval_result, 'decision_type', '')
 
                 if not is_match:
-                    logger.info(f"[AgentDiscovery] REJECT for {agent.user.username}: {reason}")
-                    _notify_agent_rejection(agent, product, reason)
+                    logger.info(f"[AgentDiscovery] REJECT ({decision_type}) for {agent.user.username}: {reason}")
+                    _notify_agent_rejection(agent, product, reason, decision_type)
                     continue
             else:
-                reason = "طابق الفئة المطلوبة (تلقائي)"
+                reason = f"المنتج طابق الفئة المطلوبة — السعر {product.price} جنيه في حدود ميزانيتك {agent.max_budget} جنيه ✅"
 
             # Match found — send discovery notification
             from ai.classifier import YOLO_CLASS_LABELS

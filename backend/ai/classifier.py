@@ -176,6 +176,30 @@ def get_available_targets():
 # Lazy-loaded model instance
 _model = None
 
+def guess_item_from_text(text: str) -> str:
+    """
+    Fallback: If YOLO fails or HF space is down, try to guess the class from the product title.
+    Matches Arabic words in the title to the YOLO classes.
+    """
+    if not text:
+        return None
+        
+    text_lower = text.lower()
+    
+    # First check exact English keys
+    for key in CATEGORY_MAP.keys():
+        if key.lower() in text_lower:
+            return key
+            
+    # Then check Arabic labels
+    for key, ar_label in YOLO_CLASS_LABELS.items():
+        # Split by " / " for labels like 'طاولة / ترابيزة'
+        labels = [l.strip() for l in ar_label.split('/')]
+        for label in labels:
+            if label and label in text_lower:
+                return key
+                
+    return None
 
 def _lookup_category(class_name: str):
     """Case-insensitive category lookup. Returns Arabic label or None."""
@@ -189,12 +213,10 @@ def _lookup_category(class_name: str):
 def classify_image(image_path: str) -> dict:
     """
     Run inference on an image via an external Hugging Face Space API.
-    Uses direct HTTP requests to the Gradio REST API for maximum compatibility.
+    Uses gradio_client for robustness.
     """
-    import requests
-    import base64
-    import json
-    import mimetypes
+    from gradio_client import Client, handle_file
+    import os
 
     fallback = {
         'category': 'other',
@@ -203,115 +225,37 @@ def classify_image(image_path: str) -> dict:
         'detected_class': None,
     }
 
-    # Default HF Space URL - hardcoded as fallback
-    DEFAULT_HF_URL = "https://omarh353111-khorda-yolo.hf.space"
-
-    hf_space_url = os.getenv("HF_SPACE_URL", "").strip().rstrip("/")
-
-    # If not set or invalid, use the hardcoded default
-    if not hf_space_url:
-        hf_space_url = DEFAULT_HF_URL
-    # Auto-convert Space ID format (e.g. "Omarh353111/khorda_yolo") to full URL
-    elif not hf_space_url.startswith("http"):
-        hf_space_url = "https://" + hf_space_url.replace("/", "-").replace("_", "-").lower() + ".hf.space"
-
-    print(f"[AI] 🔗 Using HF Space URL: {hf_space_url}")
-
-    is_url = image_path.startswith("http://") or image_path.startswith("https://")
-
     try:
-        # ── Step 1: Get image data ready ──
-        if is_url:
-            # For Cloudinary URLs, we can pass the URL directly to Gradio
-            # No need to upload - Gradio 6.x accepts URLs in the data payload
-            image_data = {
-                "url": image_path,
-                "meta": {"_type": "gradio.FileData"}
-            }
-            print(f"[AI] 📤 Sending image URL directly: {image_path[:80]}...")
-        else:
-            # For local files, upload to the HF Space first
-            upload_url = f"{hf_space_url}/gradio_api/upload"
+        # We can pass the HF space name directly, gradio_client handles URLs
+        hf_space_id = os.getenv("HF_SPACE_URL", "Omarh353111/khorda_yolo")
+        
+        # If the user put a full URL in .env, extract just the namespace/name
+        if "hf.space" in hf_space_id:
+            # simple fallback if they used full url
+            hf_space_id = "Omarh353111/khorda_yolo"
             
-            with open(image_path, "rb") as f:
-                img_bytes = f.read()
-            filename = os.path.basename(image_path)
-            mime_type = mimetypes.guess_type(filename)[0] or "image/jpeg"
-            
-            upload_resp = requests.post(
-                upload_url,
-                files={"files": (filename, img_bytes, mime_type)},
-                timeout=60,
-            )
-            upload_resp.raise_for_status()
-            uploaded_files = upload_resp.json()
-            
-            if not uploaded_files or len(uploaded_files) == 0:
-                logger.error("HF Space upload returned empty result")
-                return fallback
-            
-            uploaded_path = uploaded_files[0]
-            print(f"[AI] 📤 Uploaded to HF Space: {uploaded_path}")
-            image_data = {
-                "path": uploaded_path,
-                "meta": {"_type": "gradio.FileData"}
-            }
+        print(f"[AI] 🔗 Connecting to HF Space: {hf_space_id}")
+        client = Client(hf_space_id)
 
-        # ── Step 2: Call the /gradio_api/call/predict endpoint ──
-        predict_url = f"{hf_space_url}/gradio_api/call/predict"
-        payload = {"data": [image_data]}
-
-        predict_resp = requests.post(
-            predict_url,
-            json=payload,
-            headers={"Content-Type": "application/json"},
-            timeout=120,
+        print(f"[AI] 📤 Sending image to Space...")
+        # predict returns a tuple: (image_path, text_label) for this specific space
+        result = client.predict(
+            handle_file(image_path),
+            api_name="/predict"
         )
-        predict_resp.raise_for_status()
-        event_id_json = predict_resp.json()
-        event_id = event_id_json.get("event_id")
         
-        if not event_id:
-            logger.error(f"No event_id in response: {event_id_json}")
-            return fallback
-        
-        print(f"[AI] 🎫 Got event_id: {event_id}")
-
-        # ── Step 3: Get result from event stream ──
-        result_url = f"{hf_space_url}/gradio_api/call/predict/{event_id}"
-        result_resp = requests.get(result_url, timeout=120, stream=True)
-        result_resp.raise_for_status()
-        
-        # Parse SSE (Server-Sent Events) response
-        result_data = None
-        for line in result_resp.iter_lines(decode_unicode=True):
-            if not line:
-                continue
-            if line.startswith("data:"):
-                data_str = line[5:].strip()
-                try:
-                    result_data = json.loads(data_str)
-                except json.JSONDecodeError:
-                    continue
-
-        if not result_data:
-            logger.error("No result data received from HF Space SSE stream")
-            return fallback
-
-        print(f"[AI] 📥 HF Space raw response: {json.dumps(result_data, ensure_ascii=False)[:500]}")
-
-        # ── Step 4: Extract the class name from response ──
-        # Gradio returns [output1, output2, ...] in the SSE data
-        data = result_data if isinstance(result_data, list) else result_data.get("data", [result_data])
-        
+        # Extract class name from result tuple/list
         best_class = "other"
-        if len(data) >= 2:
-            # outputs=[gr.Image, gr.Text] -> data[1] is the text
-            raw_val = data[1]
-            best_class = str(raw_val).strip() if not isinstance(raw_val, dict) else "other"
-        elif len(data) == 1:
-            raw_val = data[0]
-            best_class = str(raw_val).strip() if not isinstance(raw_val, dict) else "other"
+        if isinstance(result, tuple) or isinstance(result, list):
+            if len(result) >= 2:
+                best_class = str(result[1]).strip()
+            elif len(result) == 1:
+                best_class = str(result[0]).strip()
+        elif isinstance(result, str):
+            best_class = result.strip()
+            
+        if not best_class or best_class == "None":
+            best_class = "other"
 
         print(f"[AI] 🔍 Hugging Face API returned YOLO class: '{best_class}'")
 
@@ -339,12 +283,6 @@ def classify_image(image_path: str) -> dict:
             'detected_class': best_class,
         }
 
-    except requests.exceptions.Timeout:
-        logger.error("HF Space request timed out - Space may be sleeping")
-        return fallback
-    except requests.exceptions.HTTPError as e:
-        logger.error(f"HF Space HTTP error: {e.response.status_code} - {e.response.text[:200]}")
-        return fallback
     except Exception as e:
         logger.error(f"Hugging Face inference error: {e}")
         import traceback

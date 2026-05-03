@@ -12,7 +12,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Logo } from '@/components/ui/logo';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '../providers/auth-provider';
-import { notificationsAPI } from '@/lib/api';
+import { notificationsAPI, chatAPI } from '@/lib/api';
 
 // ─────────────────────────────────────────────
 // DESKTOP NAV LINK
@@ -55,6 +55,7 @@ export function Navbar() {
   const [activeSection, setActiveSection] = useState('home');
   const [notifications, setNotifications] = useState<any[]>([]);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [unreadMessages, setUnreadMessages] = useState(0);
 
   // Scroll effect & Active section tracking
   useEffect(() => {
@@ -89,12 +90,29 @@ export function Navbar() {
     };
   }, []);
 
-  // Fetch notifications
+  // Fetch notifications + unread messages
   useEffect(() => {
     if (user) {
         notificationsAPI.list().then(data => setNotifications(data)).catch(console.error);
+        chatAPI.getUnreadCount().then(d => setUnreadMessages(d.unread_count)).catch(console.error);
     }
   }, [user]);
+
+  // Poll unread messages every 30 seconds
+  useEffect(() => {
+    if (!user) return;
+    const interval = setInterval(() => {
+      chatAPI.getUnreadCount().then(d => setUnreadMessages(d.unread_count)).catch(() => {});
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [user]);
+
+  const handleMarkNotificationsRead = async () => {
+    try {
+      await notificationsAPI.markAllRead();
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+    } catch (e) { console.error(e); }
+  };
 
   // Close menu on navigate
   useEffect(() => {
@@ -116,7 +134,7 @@ export function Navbar() {
     { name: 'البحث بالصورة',     href: '/visual-search', icon: <Search size={16} /> },
     ...(user ? [
       { name: 'الوكيل الذكي', href: '/agent',  icon: <Bot size={16} /> },
-      { name: 'الرسائل',      href: '/messages', icon: <MessageCircle size={16} /> }
+      { name: 'الرسائل',      href: '/messages', icon: <MessageCircle size={16} />, badge: unreadMessages }
     ] : []),
     ...(isAdmin ? [
       { name: 'لوحة الإدارة', href: '/admin-dashboard', icon: <Shield size={16} />, color: 'text-amber-600' }
@@ -165,7 +183,7 @@ export function Navbar() {
                   <Link
                     key={link.name}
                     href={link.href}
-                    className={`font-tajawal text-[15px] font-bold flex items-center gap-2 transition-all duration-300 ${
+                    className={`font-tajawal text-[15px] font-bold flex items-center gap-2 transition-all duration-300 relative ${
                       isActive 
                         ? 'text-primary' 
                         // @ts-ignore
@@ -175,6 +193,13 @@ export function Navbar() {
                      {/* @ts-ignore */}
                     {link.icon}
                     {link.name}
+                    {/* @ts-ignore */}
+                    {link.badge > 0 && (
+                      <span className="bg-red-500 text-white text-[10px] font-bold min-w-[18px] h-[18px] flex items-center justify-center rounded-full px-1 leading-none">
+                        {/* @ts-ignore */}
+                        {link.badge > 99 ? '99+' : link.badge}
+                      </span>
+                    )}
                   </Link>
                 );
               })}
@@ -262,24 +287,32 @@ export function Navbar() {
                               <div className="p-4 border-b border-slate-100 dark:border-slate-700 font-tajawal font-bold text-slate-800 dark:text-white flex items-center justify-between">
                                 الإشعارات
                                 {unreadCount > 0 && (
-                                  <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full">{unreadCount} جديد</span>
+                                  <button
+                                    onClick={handleMarkNotificationsRead}
+                                    className="text-[10px] bg-primary/10 text-primary px-2.5 py-1 rounded-full hover:bg-primary/20 transition-colors cursor-pointer"
+                                  >
+                                    تعليم الكل كمقروء ({unreadCount})
+                                  </button>
                                 )}
                               </div>
                               <div className="max-h-80 overflow-y-auto">
                                 {notifications.length > 0 ? (
-                                    notifications.slice(0, 5).map((n: any) => (
-                                        <div key={n.id} className={`p-4 border-b border-slate-50 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${!n.is_read ? 'bg-primary/5' : ''}`}>
-                                            <p className="text-[13px] font-semibold text-slate-800 dark:text-slate-100 mb-1">{n.title}</p>
-                                            <p className="text-[11px] text-slate-500 line-clamp-2">{n.message}</p>
+                                    notifications.slice(0, 6).map((n: any) => (
+                                        <div key={n.id} className={`p-4 border-b border-slate-50 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${!n.is_read ? 'bg-primary/5 border-r-2 border-r-primary' : ''}`}>
+                                            <p className="text-[13px] font-semibold text-slate-800 dark:text-slate-100 mb-1 line-clamp-1">{n.title}</p>
+                                            <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed">{n.message}</p>
+                                            <p className="text-[10px] text-slate-400 mt-1.5">
+                                              {new Date(n.created_at).toLocaleDateString('ar-EG', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                            </p>
                                         </div>
                                     ))
                                 ) : (
                                     <div className="p-6 text-center text-sm text-slate-500">لا توجد إشعارات حالياً</div>
                                 )}
                               </div>
-                              <Link href="/profile" onClick={() => setNotificationsOpen(false)}>
+                              <Link href="/agent" onClick={() => setNotificationsOpen(false)}>
                                 <div className="p-3 text-center text-[12px] font-bold text-primary hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer transition-colors">
-                                  عرض كل الإشعارات
+                                  عرض كل الإشعارات →
                                 </div>
                               </Link>
                             </motion.div>

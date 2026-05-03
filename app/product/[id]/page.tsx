@@ -14,6 +14,7 @@ import { productsAPI, auctionsAPI, authAPI, chatAPI } from '@/lib/api';
 const categoryLabels: Record<string, string> = {
     scrap_metals: 'خردة ومعادن',
     electronics: 'إلكترونيات وأجهزة',
+    appliances: 'أجهزة منزلية',
     furniture: 'أثاث وديكور',
     cars: 'سيارات للبيع',
     real_estate: 'عقارات',

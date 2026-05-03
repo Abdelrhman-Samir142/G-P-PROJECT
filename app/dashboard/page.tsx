@@ -22,12 +22,14 @@ function SectionHeader({
     subtitle,
     color = 'text-primary',
     bgColor = 'bg-primary/10',
+    action,
 }: {
     icon: any;
     title: string;
     subtitle?: string;
     color?: string;
     bgColor?: string;
+    action?: React.ReactNode;
 }) {
     return (
         <motion.div
@@ -44,7 +46,8 @@ function SectionHeader({
                 <h3 className="text-xl font-black">{title}</h3>
                 {subtitle && <p className="text-slate-500 dark:text-slate-400 text-sm mt-0.5">{subtitle}</p>}
             </div>
-            <div className="flex-1 h-px bg-gradient-to-l from-transparent to-slate-200 dark:to-slate-700 ml-2" />
+            <div className="flex-1 h-px bg-gradient-to-l from-transparent to-slate-200 dark:to-slate-700 mx-2" />
+            {action && <div>{action}</div>}
         </motion.div>
     );
 }
@@ -123,6 +126,12 @@ export default function DashboardPage() {
     });
     const [wishlistIds, setWishlistIds] = useState<number[]>([]);
 
+    // "Show more" state for each section
+    const INITIAL_AUCTIONS = 4;
+    const INITIAL_FEATURED = 4;
+    const INITIAL_LATEST = 6;
+    const [showAllAuctions, setShowAllAuctions] = useState(false);
+
     const fetchProducts = useCallback(async () => {
         try {
             setLoading(true);
@@ -190,8 +199,8 @@ export default function DashboardPage() {
     // Derived sections (only when no active filter/search to avoid confusion)
     const isFiltering = !!(searchQuery || filters.category || filters.min_price || filters.max_price || filters.condition);
 
-    const featuredProducts = isFiltering ? [] : allProducts.slice(0, 4);
-    const latestProducts = isFiltering ? [] : allProducts.slice(0, 6);
+    // Non-auction products for featured / latest sections
+    const nonAuctionProducts = isFiltering ? [] : allProducts.filter(p => !p.is_auction);
     const auctionProducts = isFiltering ? [] : allProducts.filter(p => p.is_auction);
 
     if (authLoading || !user) {
@@ -314,9 +323,11 @@ export default function DashboardPage() {
                                             <SidebarFilters currentFilters={filters} onFilterChange={handleFilterChange} />
                                         </motion.div>
                                         <div className="lg:col-span-3">
-                                            <p className="text-slate-500 text-sm mb-4">
-                                                {allProducts.length} نتيجة {searchQuery ? `لـ "${searchQuery}"` : ''}
-                                            </p>
+                                            <div className="flex justify-between items-center mb-4">
+                                                <p className="text-slate-500 text-sm">
+                                                    {allProducts.length} نتيجة {searchQuery ? `لـ "${searchQuery}"` : ''}
+                                                </p>
+                                            </div>
                                             <motion.div
                                                 variants={staggerContainer}
                                                 initial="hidden"
@@ -347,9 +358,19 @@ export default function DashboardPage() {
                                                 <SectionHeader
                                                     icon={Gavel}
                                                     title="المزادات النشطة"
-                                                    subtitle="شارك الآن قبل انتهاء الوقت"
+                                                    subtitle={`${auctionProducts.length} مزاد`}
                                                     color="text-orange-600"
                                                     bgColor="bg-orange-100 dark:bg-orange-900/30"
+                                                    action={
+                                                        auctionProducts.length > INITIAL_AUCTIONS && (
+                                                            <button
+                                                                onClick={() => setShowAllAuctions(!showAllAuctions)}
+                                                                className="text-orange-600 hover:text-orange-700 dark:text-orange-400 font-bold text-sm bg-orange-50 hover:bg-orange-100 dark:bg-orange-900/30 dark:hover:bg-orange-900/50 px-4 py-2 rounded-xl transition-colors whitespace-nowrap"
+                                                            >
+                                                                {showAllAuctions ? 'عرض أقل' : `عرض الكل`}
+                                                            </button>
+                                                        )
+                                                    }
                                                 />
                                                 <motion.div
                                                     variants={staggerContainer}
@@ -358,7 +379,7 @@ export default function DashboardPage() {
                                                     viewport={{ once: true }}
                                                     className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5"
                                                 >
-                                                    {auctionProducts.slice(0, 4).map((p) => (
+                                                    {(showAllAuctions ? auctionProducts : auctionProducts.slice(0, INITIAL_AUCTIONS)).map((p) => (
                                                         <motion.div key={p.id} variants={staggerItem}>
                                                             <FeaturedCard
                                                                 product={toCard(p)}
@@ -389,7 +410,7 @@ export default function DashboardPage() {
                                                 viewport={{ once: true }}
                                                 className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5"
                                             >
-                                                {featuredProducts.map((p) => (
+                                                {nonAuctionProducts.slice(0, INITIAL_FEATURED).map((p) => (
                                                     <motion.div key={p.id} variants={staggerItem}>
                                                         <FeaturedCard
                                                             product={toCard(p)}
@@ -419,7 +440,7 @@ export default function DashboardPage() {
                                                 viewport={{ once: true }}
                                                 className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
                                             >
-                                                {latestProducts.map((p) => (
+                                                {nonAuctionProducts.slice(0, INITIAL_LATEST).map((p) => (
                                                     <motion.div key={p.id} variants={staggerItem}>
                                                         <ProductCard
                                                             product={toCard(p)}
@@ -475,6 +496,7 @@ export default function DashboardPage() {
                                                     </motion.div>
                                                 </div>
                                             </div>
+
                                         </section>
 
                                     </div>

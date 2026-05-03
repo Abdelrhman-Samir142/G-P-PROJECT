@@ -434,6 +434,118 @@ export default function AgentPage() {
                         </motion.div>
                     )}
 
+                    {/* ── NOTIFICATIONS SECTION ── */}
+                    {!loading && notifications.length > 0 && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.2 }}
+                            className="mt-10"
+                        >
+                            <div className="flex items-center justify-between mb-5">
+                                <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                                    <Bell size={22} className="text-primary" />
+                                    نشاط الوكيل
+                                    {unreadCount > 0 && (
+                                        <span className="bg-primary text-white text-xs font-bold px-2.5 py-1 rounded-full">
+                                            {unreadCount}
+                                        </span>
+                                    )}
+                                </h2>
+                                {unreadCount > 0 && (
+                                    <button
+                                        onClick={handleMarkAllRead}
+                                        className="text-sm text-primary hover:text-primary-700 font-bold transition-colors"
+                                    >
+                                        تعليم الكل كمقروء
+                                    </button>
+                                )}
+                            </div>
+
+                            <div className="space-y-3">
+                                {notifications.map((notif, idx) => {
+                                    // Detect notification type from title
+                                    const isSuccess = notif.title.includes('✅') || notif.title.includes('بنجاح');
+                                    const isRejection = notif.title.includes('تخطى');
+                                    const isBudgetIssue = notif.title.includes('⛔') || notif.title.includes('رصيد');
+                                    const isOutbid = notif.title.includes('خسر');
+                                    const isDiscovery = notif.title.includes('وجد منتج');
+
+                                    let borderColor = 'border-slate-200 dark:border-slate-700';
+                                    let bgColor = 'bg-white dark:bg-slate-800';
+                                    let iconBg = 'bg-slate-100 dark:bg-slate-700 text-slate-500';
+                                    let icon = '🤖';
+
+                                    if (isSuccess) {
+                                        borderColor = 'border-emerald-200 dark:border-emerald-500/20';
+                                        bgColor = 'bg-emerald-50/50 dark:bg-emerald-500/5';
+                                        iconBg = 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600';
+                                        icon = '✅';
+                                    } else if (isRejection) {
+                                        borderColor = 'border-amber-200 dark:border-amber-500/20';
+                                        bgColor = 'bg-amber-50/50 dark:bg-amber-500/5';
+                                        iconBg = 'bg-amber-100 dark:bg-amber-500/20 text-amber-600';
+                                        icon = notif.title.charAt(0) === '💰' ? '💰' : notif.title.charAt(0) === '📦' ? '📦' : notif.title.charAt(0) === '🏷' ? '🏷️' : '⚠️';
+                                    } else if (isBudgetIssue) {
+                                        borderColor = 'border-red-200 dark:border-red-500/20';
+                                        bgColor = 'bg-red-50/50 dark:bg-red-500/5';
+                                        iconBg = 'bg-red-100 dark:bg-red-500/20 text-red-600';
+                                        icon = '⛔';
+                                    } else if (isOutbid) {
+                                        borderColor = 'border-orange-200 dark:border-orange-500/20';
+                                        bgColor = 'bg-orange-50/50 dark:bg-orange-500/5';
+                                        iconBg = 'bg-orange-100 dark:bg-orange-500/20 text-orange-600';
+                                        icon = '🔔';
+                                    } else if (isDiscovery) {
+                                        borderColor = 'border-blue-200 dark:border-blue-500/20';
+                                        bgColor = 'bg-blue-50/50 dark:bg-blue-500/5';
+                                        iconBg = 'bg-blue-100 dark:bg-blue-500/20 text-blue-600';
+                                        icon = '🔍';
+                                    }
+
+                                    return (
+                                        <motion.div
+                                            key={notif.id}
+                                            initial={{ opacity: 0, x: -10 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            transition={{ delay: idx * 0.04 }}
+                                            className={`${bgColor} rounded-xl border ${borderColor} p-4 shadow-sm transition-all ${!notif.is_read ? 'ring-2 ring-primary/20' : 'opacity-80'}`}
+                                        >
+                                            <div className="flex items-start gap-3">
+                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-lg ${iconBg}`}>
+                                                    {icon}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <h4 className="font-bold text-sm text-slate-900 dark:text-slate-100 truncate">
+                                                            {notif.title}
+                                                        </h4>
+                                                        <span className="text-xs text-slate-400 shrink-0">
+                                                            {new Date(notif.created_at).toLocaleDateString('ar-EG', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-sm text-slate-600 dark:text-slate-400 mt-1.5 leading-relaxed whitespace-pre-line">
+                                                        {notif.message}
+                                                    </p>
+                                                    {notif.product_title && !notif.message.includes(notif.product_title) && (
+                                                        <p className="text-xs text-slate-400 mt-2 flex items-center gap-1">
+                                                            📦 {notif.product_title}
+                                                        </p>
+                                                    )}
+                                                    {!notif.is_read && (
+                                                        <span className="inline-block mt-2 text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                                                            جديد
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    );
+                                })}
+                            </div>
+                        </motion.div>
+                    )}
+
                 </div>
             </main>
             <Footer />
