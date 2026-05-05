@@ -90,8 +90,8 @@ class _HomeProductCardState extends State<HomeProductCard>
                           ? CachedNetworkImage(
                               imageUrl: imageUrl,
                               fit: BoxFit.cover,
-                              placeholder: (_, _) => AppShimmer(width: double.infinity, height: double.infinity),
-                              errorWidget: (_, _, _) => Container(
+                              placeholder: (_, __) => AppShimmer(width: double.infinity, height: double.infinity),
+                              errorWidget: (_, __, ___) => Container(
                                 decoration: BoxDecoration(
                                   color: AppColors.slate100,
                                   image: const DecorationImage(
@@ -212,7 +212,7 @@ class ProductsGridShimmer extends StatelessWidget {
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
       sliver: SliverGrid(
         delegate: SliverChildBuilderDelegate(
-          (_, _) => Container(
+          (_, __) => Container(
             decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(16.r)),
             child: AppShimmer(width: double.infinity, height: double.infinity),
           ),

@@ -283,9 +283,9 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                     fit: BoxFit.cover,
                     width: double.infinity,
                     height: 340.h,
-                    placeholder: (_, _) =>
+                    placeholder: (_, __) =>
                         Container(color: const Color(0xFFF1F5F9)),
-                    errorWidget: (_, _, _) => Container(
+                    errorWidget: (_, __, ___) => Container(
                       color: const Color(0xFFF1F5F9),
                       child: Icon(Icons.broken_image_outlined,
                           size: 48.w, color: AppColors.slate300),

@@ -159,7 +159,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> with TickerProv
   Widget _buildAnimatedBg() {
     return AnimatedBuilder(
       animation: _bgCtrl,
-      builder: (_, _) {
+      builder: (_, __) {
         return Stack(
           children: [
             Container(color: _bgLight),

@@ -70,9 +70,9 @@ class ProductsService {
         'category': category,
         'condition': condition,
         'location': location,
-        'phone_number': ?phoneNumber,
+        'phone_number': phoneNumber,
         'is_auction': isAuction,
-        'auction_end_time': ?auctionEndTime,
+        'auction_end_time': auctionEndTime,
       });
 
       if (imagePaths != null) {

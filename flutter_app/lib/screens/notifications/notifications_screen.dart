@@ -358,7 +358,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     return ListView.builder(
       padding: EdgeInsets.all(16.w),
       itemCount: 6,
-      itemBuilder: (_, _) => Padding(
+      itemBuilder: (_, __) => Padding(
         padding: EdgeInsets.only(bottom: 10.h),
         child: Row(
           children: [

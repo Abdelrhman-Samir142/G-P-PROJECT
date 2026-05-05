@@ -188,7 +188,7 @@ class _StoreScreenState extends ConsumerState<StoreScreen> with TickerProviderSt
   Widget _buildAnimatedBg() {
     return AnimatedBuilder(
       animation: _bgCtrl,
-      builder: (_, _) {
+      builder: (_, __) {
         return Stack(
           children: [
             Positioned(
@@ -199,7 +199,7 @@ class _StoreScreenState extends ConsumerState<StoreScreen> with TickerProviderSt
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      AppColors.primary500.withValues(alpha: 0.05),
+                      AppColors.primary500.withOpacity(0.05),
                       Colors.transparent,
                     ],
                   ),
@@ -214,7 +214,7 @@ class _StoreScreenState extends ConsumerState<StoreScreen> with TickerProviderSt
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      AppColors.slate500.withValues(alpha: 0.05),
+                      AppColors.slate500.withOpacity(0.05),
                       Colors.transparent,
                     ],
                   ),
@@ -282,12 +282,18 @@ class _StoreScreenState extends ConsumerState<StoreScreen> with TickerProviderSt
             color: Colors.white,
             shape: BoxShape.circle,
             boxShadow: [
-              BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: Offset(0, 2)),
+              BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: Offset(0, 2)),
             ],
           ),
           child: Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.slate900, size: 16),
         ),
-        onPressed: () => context.pop(),
+        onPressed: () {
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            context.go('/');
+          }
+        },
       ),
     );
   }
@@ -319,8 +325,8 @@ class _StoreScreenState extends ConsumerState<StoreScreen> with TickerProviderSt
                     width: 1,
                   ),
                   boxShadow: isSelected
-                      ? [BoxShadow(color: AppColors.primary500.withValues(alpha: 0.4), blurRadius: 12, offset: const Offset(0, 4))]
-                      : [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 4, offset: const Offset(0, 2))],
+                      ? [BoxShadow(color: AppColors.primary500.withOpacity(0.4), blurRadius: 12, offset: const Offset(0, 4))]
+                      : [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2))],
                 ),
                 child: Row(
                   children: [

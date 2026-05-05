@@ -39,7 +39,7 @@ class HomeAppBar extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(12.r),
                 child: Image.asset('assets/images/logo.png',
                     fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) => Container(
+                    errorBuilder: (_, __, ___) => Container(
                           decoration: BoxDecoration(
                             gradient: AppColors.primaryGradient,
                             borderRadius: BorderRadius.circular(12.r),

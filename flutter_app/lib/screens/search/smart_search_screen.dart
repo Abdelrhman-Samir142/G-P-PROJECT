@@ -168,7 +168,7 @@ class _SmartSearchScreenState extends ConsumerState<SmartSearchScreen>
         ...List.generate(5, (i) {
           return AnimatedBuilder(
             animation: _brainCtrl,
-            builder: (_, _) {
+            builder: (_, __) {
               final phase = _brainCtrl.value * 2 * math.pi + (i * 1.26);
               final r = (50 + i * 20).toDouble();
               final cx = MediaQuery.of(context).size.width / 2;
@@ -234,7 +234,7 @@ class _SmartSearchScreenState extends ConsumerState<SmartSearchScreen>
                 // AI Brain Icon + Tagline
                 AnimatedBuilder(
                   animation: _waveCtrl,
-                  builder: (_, _) {
+                  builder: (_, __) {
                     return Container(
                       padding: EdgeInsets.all(18.w),
                       decoration: BoxDecoration(
@@ -570,7 +570,7 @@ class _SmartSearchScreenState extends ConsumerState<SmartSearchScreen>
           // Animated brain
           AnimatedBuilder(
                 animation: _brainCtrl,
-                builder: (_, _) => Transform.rotate(
+                builder: (_, __) => Transform.rotate(
                   angle: math.sin(_brainCtrl.value * math.pi * 2) * 0.05,
                   child: Container(
                     padding: EdgeInsets.all(20.w),
@@ -828,12 +828,12 @@ class _SmartSearchScreenState extends ConsumerState<SmartSearchScreen>
                                     width: 90.w,
                                     height: 90.w,
                                     fit: BoxFit.cover,
-                                    placeholder: (_, _) => Container(
+                                    placeholder: (_, __) => Container(
                                       width: 90.w,
                                       height: 90.w,
                                       color: const Color(0xFFF3F4F6),
                                     ),
-                                    errorWidget: (_, _, _) => Container(
+                                    errorWidget: (_, __, ___) => Container(
                                       width: 90.w,
                                       height: 90.w,
                                       color: const Color(0xFFF3F4F6),

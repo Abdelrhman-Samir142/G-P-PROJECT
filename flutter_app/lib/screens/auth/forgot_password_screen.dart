@@ -3,9 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import '../../providers/auth_provider.dart';
 import '../../providers/language_provider.dart';
-import '../../core/utils/app_snackbar.dart';
 import '../../widgets/language_toggle_widget.dart';
 
 // ── Premium Light Theme Constants ──────────────────────────────────
@@ -16,62 +14,51 @@ const Color _textDarkSlate = Color(0xFF0F172A); // Slate 900
 const Color _textSoftGray = Color(0xFF64748B); // Slate 500
 const Color _inputFill = Color(0xFFF8FAFC); // Slate 50
 
-class LoginScreen extends ConsumerStatefulWidget {
-  const LoginScreen({super.key});
+class ForgotPasswordScreen extends ConsumerStatefulWidget {
+  const ForgotPasswordScreen({super.key});
   @override
-  ConsumerState<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
 }
 
-class _LoginScreenState extends ConsumerState<LoginScreen> {
-  final _usernameC = TextEditingController();
-  final _passwordC = TextEditingController();
-  bool _obscure = true;
+class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
+  final _emailC = TextEditingController();
   bool _loading = false;
-  String? _error;
-  String? _usernameError;
-  String? _passwordError;
+  String? _emailError;
 
   @override
   void dispose() {
-    _usernameC.dispose();
-    _passwordC.dispose();
+    _emailC.dispose();
     super.dispose();
   }
 
   Future<void> _submit() async {
-    bool isValid = true;
-    final reqMsg = ref.read(languageProvider).locale == 'ar' ? 'مطلوب' : 'Required';
+    final lang = ref.read(languageProvider);
+    final isAr = lang.locale == 'ar';
+    final reqMsg = isAr ? 'مطلوب' : 'Required';
     
-    if (_usernameC.text.trim().isEmpty) {
-      _usernameError = reqMsg;
-      isValid = false;
-    } else {
-      _usernameError = null;
-    }
-
-    if (_passwordC.text.trim().isEmpty) {
-      _passwordError = reqMsg;
-      isValid = false;
-    } else {
-      _passwordError = null;
-    }
-
-    if (!isValid) {
-      setState(() {});
+    if (_emailC.text.trim().isEmpty) {
+      setState(() => _emailError = reqMsg);
       return;
+    } else {
+      setState(() => _emailError = null);
     }
 
-    setState(() { _loading = true; _error = null; });
-    try {
-      await ref.read(authProvider.notifier).login(
-        _usernameC.text.trim(),
-        _passwordC.text.trim(),
+    setState(() => _loading = true);
+    
+    // Simulate network request
+    await Future.delayed(const Duration(seconds: 2));
+    
+    if (mounted) {
+      setState(() => _loading = false);
+      // Show success dialog or snackbar
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(isAr ? 'تم إرسال رابط استعادة كلمة السر إلى بريدك الإلكتروني' : 'Password reset link sent to your email'),
+          backgroundColor: _primaryTeal,
+        ),
       );
-    } catch (e) {
-      if (mounted) setState(() => _error = e.toString());
-      if (mounted) AppSnackbar.error(context, e.toString());
-    } finally {
-      if (mounted) setState(() => _loading = false);
+      // Optional: pop after success
+      // context.pop();
     }
   }
 
@@ -95,103 +82,81 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
+                        // Back Button
+                        Align(
+                          alignment: isAr ? Alignment.centerRight : Alignment.centerLeft,
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                            child: IconButton(
+                              icon: Icon(Icons.arrow_back_ios_new_rounded, color: _textDarkSlate, size: 24.w),
+                              onPressed: () => context.pop(),
+                            ),
+                          ),
+                        ),
+
                         Expanded(
                           child: Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 32.w),
+                            padding: EdgeInsets.symmetric(horizontal: 24.w),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 _buildHeader(isAr),
                                 SizedBox(height: 48.h),
-                                if (_error != null)
-                                  Container(
-                                    padding: EdgeInsets.all(12.w),
-                                    margin: EdgeInsets.only(bottom: 24.h),
-                                    decoration: BoxDecoration(
-                                      color: Colors.red.withAlpha(20),
-                                      borderRadius: BorderRadius.circular(12.r),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Icon(Icons.error_outline, color: Colors.redAccent, size: 20.w),
-                                        SizedBox(width: 8.w),
-                                        Expanded(child: Text(_error!, style: TextStyle(color: Colors.redAccent, fontSize: 13.sp))),
-                                      ],
-                                    ),
-                                  ).animate().fadeIn().shakeX(),
-
-                                _CleanField(
-                                  controller: _usernameC,
-                                  hintText: isAr ? 'اسم المستخدم' : 'Username',
-                                  icon: Icons.person_outline_rounded,
-                                  errorText: _usernameError,
-                                ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1),
                                 
-                                SizedBox(height: 20.h),
-                                
-                                _CleanField(
-                                  controller: _passwordC,
-                                  hintText: isAr ? 'كلمة المرور' : 'Password',
-                                  icon: Icons.lock_outline_rounded,
-                                  obscureText: _obscure,
-                                  errorText: _passwordError,
-                                  suffix: IconButton(
-                                    icon: Icon(
-                                      _obscure ? Icons.visibility_off_rounded : Icons.visibility_rounded, 
-                                      color: _textSoftGray,
-                                      size: 20.w,
-                                    ),
-                                    splashColor: Colors.transparent,
-                                    highlightColor: Colors.transparent,
-                                    onPressed: () => setState(() => _obscure = !_obscure),
+                                // Form Card
+                                Container(
+                                  padding: EdgeInsets.all(24.w),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(24.r),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withAlpha(5),
+                                        blurRadius: 30,
+                                        offset: const Offset(0, 10),
+                                      ),
+                                    ],
                                   ),
-                                ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.1),
-
-                                SizedBox(height: 16.h),
-                                Align(
-                                  alignment: isAr ? Alignment.centerLeft : Alignment.centerRight,
-                                  child: TextButton(
-                                    onPressed: () => context.push('/forgot-password'),
-                                    style: TextButton.styleFrom(
-                                      foregroundColor: _textSoftGray,
-                                      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-                                      minimumSize: Size.zero,
-                                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                    ),
-                                    child: Text(
-                                      isAr ? 'نسيت كلمة المرور؟' : 'Forgot password?',
-                                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13.sp),
-                                    ),
+                                  child: Column(
+                                    children: [
+                                      _CleanField(
+                                        controller: _emailC,
+                                        hintText: isAr ? 'البريد الإلكتروني' : 'Email Address',
+                                        icon: Icons.email_outlined,
+                                        errorText: _emailError,
+                                      ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1),
+                                      
+                                      SizedBox(height: 32.h),
+                                      
+                                      _PrimaryBtn(
+                                        text: isAr ? 'استعادة كلمة السر' : 'Reset Password',
+                                        isLoading: _loading,
+                                        onTap: _submit,
+                                      ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1),
+                                    ],
                                   ),
-                                ).animate().fadeIn(delay: 400.ms),
-
-                                SizedBox(height: 36.h),
-                                
-                                _PrimaryBtn(
-                                  text: isAr ? 'تسجيل الدخول' : 'Sign In',
-                                  isLoading: _loading,
-                                  onTap: _submit,
-                                ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.1),
+                                ).animate().fadeIn(duration: 500.ms).slideY(begin: 0.05),
 
                                 SizedBox(height: 32.h),
 
+                                // Footer Link
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Text(
-                                      isAr ? 'ليس لديك حساب؟ ' : 'Don\'t have an account? ',
+                                      isAr ? 'العودة لتسجيل الدخول؟ ' : 'Back to login? ',
                                       style: TextStyle(color: _textSoftGray, fontSize: 14.sp, fontWeight: FontWeight.w500),
                                     ),
                                     GestureDetector(
-                                      onTap: () => context.push('/register'),
+                                      onTap: () => context.pop(),
                                       child: Text(
-                                        isAr ? 'سجل الآن' : 'Sign up',
+                                        isAr ? 'تسجيل الدخول' : 'Sign In',
                                         style: TextStyle(color: _primaryTeal, fontWeight: FontWeight.bold, fontSize: 14.sp),
                                       ),
                                     ),
                                   ],
-                                ).animate().fadeIn(delay: 600.ms),
+                                ).animate().fadeIn(delay: 500.ms),
                               ],
                             ),
                           ),
@@ -217,28 +182,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Container(
-          width: 64.w,
-          height: 64.w,
-          decoration: BoxDecoration(
-            color: _primaryTeal.withAlpha(20),
-            shape: BoxShape.circle,
-            border: Border.all(color: _primaryTeal.withAlpha(50), width: 1.5),
-          ),
-          child: Center(
-            child: Icon(Icons.storefront_rounded, color: _primaryTeal, size: 32.w),
-          ),
-        ).animate().fadeIn(duration: 600.ms).scaleXY(begin: 0.5, curve: Curves.easeOutBack),
-        SizedBox(height: 24.h),
+        Image.asset(
+          'assets/images/logo.png',
+          width: 80.w,
+          height: 80.w,
+        ).animate().fadeIn(duration: 600.ms).scaleXY(begin: 0.8, curve: Curves.easeOutBack),
+        SizedBox(height: 32.h),
         Text(
-          isAr ? 'مرحباً بك' : 'Welcome',
+          isAr ? 'نسيت كلمة السر' : 'Forgot Password',
           style: TextStyle(fontSize: 28.sp, fontWeight: FontWeight.w900, color: _textDarkSlate, letterSpacing: -0.5),
           textAlign: TextAlign.center,
         ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1),
-        SizedBox(height: 8.h),
+        SizedBox(height: 12.h),
         Text(
-          isAr ? 'سجل الدخول للمتابعة' : 'Sign in to continue',
-          style: TextStyle(fontSize: 15.sp, color: _textSoftGray, fontWeight: FontWeight.w500),
+          isAr ? 'الرجاء إدخال البريد الإلكتروني المرتبط بحسابك لاستعادة كلمة المرور.' : 'Please enter the email address associated with your account to reset your password.',
+          style: TextStyle(fontSize: 15.sp, color: _textSoftGray, fontWeight: FontWeight.w500, height: 1.5),
           textAlign: TextAlign.center,
         ).animate().fadeIn(delay: 200.ms),
       ],
@@ -253,16 +211,12 @@ class _CleanField extends StatefulWidget {
   final TextEditingController controller;
   final String hintText;
   final IconData icon;
-  final bool obscureText;
-  final Widget? suffix;
   final String? errorText;
 
   const _CleanField({
     required this.controller,
     required this.hintText,
     required this.icon,
-    this.obscureText = false,
-    this.suffix,
     this.errorText,
   });
 
@@ -295,7 +249,6 @@ class _CleanFieldState extends State<_CleanField> {
             ),
             child: TextFormField(
               controller: widget.controller,
-              obscureText: widget.obscureText,
               style: const TextStyle(color: _textDarkSlate, fontWeight: FontWeight.w600),
               decoration: InputDecoration(
                 hintText: widget.hintText,
@@ -305,7 +258,6 @@ class _CleanFieldState extends State<_CleanField> {
                   fontSize: 15.sp,
                 ),
                 prefixIcon: Icon(widget.icon, color: _isFocused ? _primaryTeal : _textSoftGray, size: 22.w),
-                suffixIcon: widget.suffix,
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.symmetric(vertical: 18.h, horizontal: 16.w),
               ),

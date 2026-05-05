@@ -26,18 +26,15 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     await Future.delayed(const Duration(milliseconds: 2500));
     if (!mounted) return;
 
-    // Check if user has seen onboarding or selected language
+    // Check if user has seen onboarding
     final prefs = await SharedPreferences.getInstance();
-    final languageSelected = prefs.getBool('language_selected') ?? false;
     final hasSeenOnboarding = prefs.getBool('onboarding_done') ?? false;
 
     if (!mounted) return;
 
     final authState = ref.read(authProvider);
 
-    if (!languageSelected) {
-      context.go('/language');
-    } else if (!hasSeenOnboarding) {
+    if (!hasSeenOnboarding) {
       context.go('/onboarding');
     } else if (authState.isLoggedIn) {
       context.go('/');

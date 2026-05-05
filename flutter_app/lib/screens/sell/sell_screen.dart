@@ -342,7 +342,7 @@ class _SellScreenState extends ConsumerState<SellScreen> {
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: _images.length,
-              separatorBuilder: (_, _) => SizedBox(width: 10.w),
+              separatorBuilder: (_, __) => SizedBox(width: 10.w),
               itemBuilder: (_, i) => Stack(children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12.r),
@@ -513,7 +513,7 @@ class _SellScreenState extends ConsumerState<SellScreen> {
         boxShadow: [BoxShadow(color: Colors.black.withAlpha(6), blurRadius: 6, offset: const Offset(0, 2))],
       ),
       child: DropdownButtonFormField<String>(
-        initialValue: value,
+        value: value,
         decoration: InputDecoration(
           labelText: label,
           labelStyle: TextStyle(fontSize: 14.sp, color: AppColors.slate500),
@@ -555,7 +555,7 @@ class _SellScreenState extends ConsumerState<SellScreen> {
             ),
             child: Icon(Icons.gavel_rounded, color: AppColors.auctionOrange, size: 20.w),
           ),
-          activeThumbColor: AppColors.primary600,
+          activeColor: AppColors.primary600,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.r)),
         ),
       ),

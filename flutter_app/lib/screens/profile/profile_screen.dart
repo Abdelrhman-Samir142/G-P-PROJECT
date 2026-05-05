@@ -132,7 +132,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         // Background
         AnimatedBuilder(
           animation: _headerCtrl,
-          builder: (_, _) {
+          builder: (_, __) {
             return Container(
               height: 280.h,
               width: double.infinity,

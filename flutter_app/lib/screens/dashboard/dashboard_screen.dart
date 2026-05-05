@@ -305,7 +305,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         scrollDirection: Axis.horizontal,
         padding: EdgeInsets.symmetric(horizontal: 16.w),
         itemCount: cats.length,
-        separatorBuilder: (_, _) => SizedBox(width: 8.w),
+        separatorBuilder: (_, __) => SizedBox(width: 8.w),
         itemBuilder: (_, i) {
           final key = cats.keys.elementAt(i);
           final label = cats.values.elementAt(i);
@@ -354,7 +354,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         crossAxisCount: 2, mainAxisSpacing: 14.h, crossAxisSpacing: 14.w, childAspectRatio: 0.68,
       ),
       itemCount: 6,
-      itemBuilder: (_, _) => Container(
+      itemBuilder: (_, __) => Container(
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16.r),
@@ -446,8 +446,8 @@ class _ProductCardState extends State<_ProductCard> with SingleTickerProviderSta
                           ? CachedNetworkImage(
                               imageUrl: imageUrl,
                               fit: BoxFit.cover,
-                              placeholder: (_, _) => Container(color: const Color(0xFFF3F4F6)),
-                              errorWidget: (_, _, _) => Container(
+                              placeholder: (_, __) => Container(color: const Color(0xFFF3F4F6)),
+                              errorWidget: (_, __, ___) => Container(
                                 color: const Color(0xFFF3F4F6),
                                 child: const Icon(Icons.image_not_supported_outlined, color: Color(0xFF9CA3AF)),
                               ),
