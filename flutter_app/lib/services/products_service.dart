@@ -89,7 +89,12 @@ class ProductsService {
         data: formData,
         options: Options(contentType: 'multipart/form-data'),
       );
-      return Product.fromJson(response.data as Map<String, dynamic>);
+      
+      try {
+        return Product.fromJson(response.data as Map<String, dynamic>);
+      } catch (parseError) {
+        throw Exception("Parse Error: $parseError\nData: ${response.data}");
+      }
     } on DioException catch (e) {
       throw Exception(parseDioError(e));
     }

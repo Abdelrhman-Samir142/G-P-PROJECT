@@ -7,7 +7,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/language_provider.dart';
 import '../../core/utils/app_snackbar.dart';
 import '../../widgets/language_toggle_widget.dart';
-
+import '../../core/widgets/app_logo.dart';
 // ── Premium Light Theme Constants ──────────────────────────────────
 const Color _bgLight = Colors.white; 
 const Color _primaryTeal = Color(0xFF0D9488); // Teal 600
@@ -217,18 +217,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Container(
-          width: 64.w,
-          height: 64.w,
-          decoration: BoxDecoration(
-            color: _primaryTeal.withAlpha(20),
-            shape: BoxShape.circle,
-            border: Border.all(color: _primaryTeal.withAlpha(50), width: 1.5),
-          ),
-          child: Center(
-            child: Icon(Icons.storefront_rounded, color: _primaryTeal, size: 32.w),
-          ),
-        ).animate().fadeIn(duration: 600.ms).scaleXY(begin: 0.5, curve: Curves.easeOutBack),
+        const AppLogo(),
         SizedBox(height: 24.h),
         Text(
           isAr ? 'مرحباً بك' : 'Welcome',

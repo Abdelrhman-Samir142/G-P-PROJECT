@@ -90,11 +90,11 @@ class _HomeProductCardState extends State<HomeProductCard>
                           ? CachedNetworkImage(
                               imageUrl: imageUrl,
                               fit: BoxFit.cover,
-                              placeholder: (_, __) => AppShimmer(width: double.infinity, height: double.infinity),
+                              placeholder: (_, __) => const AppShimmer(width: double.infinity, height: double.infinity),
                               errorWidget: (_, __, ___) => Container(
-                                decoration: BoxDecoration(
+                                decoration: const BoxDecoration(
                                   color: AppColors.slate100,
-                                  image: const DecorationImage(
+                                  image: DecorationImage(
                                     image: NetworkImage('https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?q=80&w=600&auto=format&fit=crop'),
                                     fit: BoxFit.cover,
                                     opacity: 0.5,
@@ -106,9 +106,9 @@ class _HomeProductCardState extends State<HomeProductCard>
                               ),
                             )
                           : Container(
-                              decoration: BoxDecoration(
+                              decoration: const BoxDecoration(
                                 color: AppColors.slate100,
-                                image: const DecorationImage(
+                                image: DecorationImage(
                                   image: NetworkImage('https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?q=80&w=600&auto=format&fit=crop'),
                                   fit: BoxFit.cover,
                                   opacity: 0.5,
@@ -214,7 +214,7 @@ class ProductsGridShimmer extends StatelessWidget {
         delegate: SliverChildBuilderDelegate(
           (_, __) => Container(
             decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(16.r)),
-            child: AppShimmer(width: double.infinity, height: double.infinity),
+            child: const AppShimmer(width: double.infinity, height: double.infinity),
           ),
           childCount: 4,
         ),

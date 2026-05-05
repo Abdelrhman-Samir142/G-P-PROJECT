@@ -262,7 +262,7 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
         children: [
           Container(
             padding: EdgeInsets.all(24.w),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: AppColors.primary50,
               shape: BoxShape.circle,
             ),

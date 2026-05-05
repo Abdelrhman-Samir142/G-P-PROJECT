@@ -585,8 +585,8 @@ class _AgentScreenState extends ConsumerState<AgentScreen>
         children: [
           Container(
             padding: EdgeInsets.all(24.w),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF3F0FF),
+            decoration: const BoxDecoration(
+              color: Color(0xFFF3F0FF),
               shape: BoxShape.circle,
             ),
             child: Icon(Icons.smart_toy_outlined,

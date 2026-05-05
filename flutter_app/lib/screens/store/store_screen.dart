@@ -128,7 +128,7 @@ class _StoreScreenState extends ConsumerState<StoreScreen> with TickerProviderSt
                     SliverToBoxAdapter(
                       child: Center(
                         child: Padding(
-                          padding: EdgeInsets.all(40),
+                          padding: const EdgeInsets.all(40),
                           child: Text(_error!, style: TextStyle(color: Colors.redAccent, fontSize: 16.sp)),
                         ),
                       ),
@@ -137,7 +137,7 @@ class _StoreScreenState extends ConsumerState<StoreScreen> with TickerProviderSt
                     SliverToBoxAdapter(
                       child: Center(
                         child: Padding(
-                          padding: EdgeInsets.all(60),
+                          padding: const EdgeInsets.all(60),
                           child: Column(
                             children: [
                               Icon(Icons.inventory_2_outlined, size: 60.w, color: AppColors.slate400),
@@ -253,13 +253,13 @@ class _StoreScreenState extends ConsumerState<StoreScreen> with TickerProviderSt
               fit: StackFit.expand,
               children: [
                 Container(
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
                         AppColors.primary50,
-                        const Color(0xFFFAFBFC),
+                        Color(0xFFFAFBFC),
                       ],
                     ),
                   ),
@@ -282,10 +282,10 @@ class _StoreScreenState extends ConsumerState<StoreScreen> with TickerProviderSt
             color: Colors.white,
             shape: BoxShape.circle,
             boxShadow: [
-              BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: Offset(0, 2)),
+              BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2)),
             ],
           ),
-          child: Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.slate900, size: 16),
+          child: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.slate900, size: 16),
         ),
         onPressed: () {
           if (context.canPop()) {

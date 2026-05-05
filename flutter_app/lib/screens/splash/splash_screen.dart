@@ -6,6 +6,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../providers/auth_provider.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/widgets/app_logo.dart';
 
 /// Splash screen — branded entry point with auth + onboarding checks.
 class SplashScreen extends ConsumerStatefulWidget {
@@ -46,21 +47,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.primary700,
+      backgroundColor: Colors.white,
       body: Center(
         child: Hero(
           tag: 'app-logo',
-          child: Image.asset(
-            'assets/images/logo.png',
-            width: 150.w,
-            errorBuilder: (context, error, stackTrace) {
-              return Icon(
-                Icons.storefront_rounded,
-                size: 80.w,
-                color: Colors.white,
-              );
-            },
-          ),
+          child: const AppLogo(scale: 1.8),
         ).animate()
          .fadeIn(duration: 500.ms, curve: Curves.easeOut)
          .scaleXY(begin: 0.5, end: 1.0, duration: 800.ms, curve: Curves.elasticOut),

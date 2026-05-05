@@ -15,6 +15,7 @@ import '../../shared/widgets/app_error_state.dart';
 import '../../services/wishlist_service.dart';
 import '../../services/products_service.dart';
 import '../../models/product.dart';
+import '../../core/widgets/app_logo.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -183,31 +184,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       child: Row(
         children: [
           // Logo + Title
-          Container(
-            width: 36.w,
-            height: 36.w,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10.r),
-              boxShadow: [BoxShadow(color: Colors.black.withAlpha(8), blurRadius: 4, offset: const Offset(0, 1))],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(10.r),
-              child: Image.asset('assets/images/logo.png', fit: BoxFit.cover),
-            ),
-          ),
-          SizedBox(width: 10.w),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('4Sale', style: TextStyle(
-                fontSize: 20.sp, fontWeight: FontWeight.w800,
-                color: AppColors.slate900, letterSpacing: -0.5,
-              )),
-              Text(dict['storeSubtitle'] as String, style: TextStyle(
-                fontSize: 11.sp, color: AppColors.slate400, fontWeight: FontWeight.w500,
-              )),
-            ],
-          ),
+          const AppLogo(scale: 0.7, withAnimation: false),
           const Spacer(),
           // Search icon
           _iconBtn(Icons.search_rounded, () => context.push('/search')),
@@ -359,7 +336,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(16.r),
         ),
-        child: AppShimmer(width: double.infinity, height: double.infinity),
+        child: const AppShimmer(width: double.infinity, height: double.infinity),
       ),
     );
   }

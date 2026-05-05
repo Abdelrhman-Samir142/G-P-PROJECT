@@ -5,7 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../providers/language_provider.dart';
 import '../../widgets/language_toggle_widget.dart';
-
+import '../../core/widgets/app_logo.dart';
 // ── Premium Light Theme Constants ──────────────────────────────────
 const Color _bgLight = Colors.white; 
 const Color _primaryTeal = Color(0xFF0D9488); // Teal 600
@@ -182,11 +182,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Image.asset(
-          'assets/images/logo.png',
-          width: 80.w,
-          height: 80.w,
-        ).animate().fadeIn(duration: 600.ms).scaleXY(begin: 0.8, curve: Curves.easeOutBack),
+        const AppLogo(scale: 1.2),
         SizedBox(height: 32.h),
         Text(
           isAr ? 'نسيت كلمة السر' : 'Forgot Password',

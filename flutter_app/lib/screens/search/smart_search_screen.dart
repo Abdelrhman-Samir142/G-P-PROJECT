@@ -97,11 +97,12 @@ class _SmartSearchScreenState extends ConsumerState<SmartSearchScreen>
             fetched.add(p);
           } catch (_) {}
         }
-        if (mounted)
+        if (mounted) {
           setState(() {
             _products = fetched;
             _loadingProducts = false;
           });
+        }
       }
     } catch (e) {
       _error = e.toString();
@@ -933,7 +934,7 @@ class _SmartSearchScreenState extends ConsumerState<SmartSearchScreen>
                             padding: EdgeInsets.only(right: 12.w),
                             child: Container(
                               padding: EdgeInsets.all(8.w),
-                              decoration: BoxDecoration(
+                              decoration: const BoxDecoration(
                                 color: AppColors.primary50,
                                 shape: BoxShape.circle,
                               ),
