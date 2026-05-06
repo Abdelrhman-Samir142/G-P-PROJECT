@@ -412,6 +412,19 @@ def get_general_stats(request):
 
 
 @api_view(['GET'])
+@permission_classes([AllowAny])
+def get_categories(request):
+    """
+    Get all available product categories based on Product model choices.
+    """
+    categories = [
+        {'id': choice[0], 'name': choice[1]}
+        for choice in Product.CATEGORY_CHOICES
+    ]
+    return Response(categories)
+
+
+@api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def wishlist_list(request):
     """Get user's wishlist products"""

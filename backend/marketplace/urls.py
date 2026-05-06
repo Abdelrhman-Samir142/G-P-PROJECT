@@ -21,6 +21,7 @@ from .views import (
     notifications_list,
     notifications_mark_read,
     notifications_unread_count,
+    get_categories,
 )
 
 router = DefaultRouter()
@@ -37,6 +38,9 @@ urlpatterns = [
     path('auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('auth/me/', current_user_view, name='current_user'),
     path('general-stats/', get_general_stats, name='general-stats'),
+    
+    # Categories endpoint
+    path('categories/', get_categories, name='categories'),
     
     # Wishlist endpoints
     path('wishlist/', wishlist_list, name='wishlist-list'),

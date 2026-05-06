@@ -139,4 +139,29 @@ class ProductsService {
       throw Exception(parseDioError(e));
     }
   }
+
+  /// GET /categories/
+  static Future<List<Map<String, dynamic>>> getCategories() async {
+    try {
+      final response = await _dio.get(ApiConstants.categories);
+      print('=== CATEGORIES API RESPONSE ===');
+      print(response.data);
+      
+      if (response.data is List) {
+        final list = response.data as List<dynamic>;
+        return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      } else {
+        print('Categories API returned non-list data: ${response.data}');
+        return [];
+      }
+    } on DioException catch (e) {
+      print('=== CATEGORIES API DIO ERROR ===');
+      print(e.response?.data);
+      throw Exception(parseDioError(e));
+    } catch (e) {
+      print('=== CATEGORIES API UNKNOWN ERROR ===');
+      print(e);
+      return [];
+    }
+  }
 }

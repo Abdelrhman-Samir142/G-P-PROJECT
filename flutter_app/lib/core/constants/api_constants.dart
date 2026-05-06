@@ -12,6 +12,9 @@ class ApiConstants {
   static const String refreshToken = '/auth/refresh/';
   static const String currentUser = '/auth/me/';
 
+  // ── Categories ────────────────────────────────────────────────
+  static const String categories = '/categories/';
+
   // ── Products ──────────────────────────────────────────────────
   static const String products = '/products/';
   static String productDetail(String id) => '/products/$id/';
